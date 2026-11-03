@@ -2,10 +2,12 @@ from pico2d import load_image
 from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_LEFT, SDLK_RIGHT
 from transitions import Machine
 
+import camera
+
 
 class Player:
     def __init__(self):
-        self.x = 400
+        self.x = 64
         self.y = 300
         self.speed = 3
         self.frame = 0
@@ -41,10 +43,10 @@ class Player:
     def update(self):
         if self.state == "RUN":
             if SDLK_LEFT in self.pressed_keys:
-                self.x -= self.speed
+                self.x = max(32, self.x - self.speed)
                 self.direction = "left"
             elif SDLK_RIGHT in self.pressed_keys:
-                self.x += self.speed
+                self.x = min(camera.WORLD_WIDTH - 32, self.x + self.speed)
                 self.direction = "right"
 
         self.frame_timer += 1
