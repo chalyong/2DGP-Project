@@ -24,11 +24,11 @@ def update_world():
 
 
 def reset_world():
-    game_world.world.clear()
+    game_world.clear()
     background = Background()
-    game_world.add_object(background)
+    game_world.add_object(background, depth=0)
     player = Player()
-    game_world.add_object(player)
+    game_world.add_object(player, depth=1)
 
 
 def render_world():

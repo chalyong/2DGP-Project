@@ -1,20 +1,33 @@
-world = []
+MAX_DEPTH = 10
+DEFAULT_DEPTH = 0
+world = [[] for _ in range(MAX_DEPTH)]
 
 
-def add_object(obj):
-    world.append(obj)
+def add_object(obj, depth=DEFAULT_DEPTH):
+    if not 0 <= depth < MAX_DEPTH:
+        raise ValueError(f"depth must be between 0 and {MAX_DEPTH - 1}")
+    world[depth].append(obj)
 
 
 def remove_object(obj):
-    if obj in world:
-        world.remove(obj)
+    for objects in world:
+        if obj in objects:
+            objects.remove(obj)
+            return
+
+
+def clear():
+    for objects in world:
+        objects.clear()
 
 
 def update():
-    for obj in world:
-        obj.update()
+    for objects in world:
+        for obj in objects:
+            obj.update()
 
 
 def render():
-    for obj in world:
-        obj.draw()
+    for objects in world:
+        for obj in objects:
+            obj.draw()
