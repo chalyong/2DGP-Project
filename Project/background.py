@@ -1,5 +1,7 @@
 from pico2d import load_image
 
+import camera
+
 
 class Background:
     def __init__(self):
@@ -9,4 +11,9 @@ class Background:
         pass
 
     def draw(self):
-        self.image.draw(400, 300, 800, 600)
+        self.image.draw(
+            camera.WORLD_WIDTH // 2 - camera.x,
+            camera.WORLD_HEIGHT // 2 - camera.y,
+            camera.WORLD_WIDTH,
+            camera.WORLD_HEIGHT,
+        )

@@ -65,6 +65,6 @@ class Player:
             64,
             0,
             flip,
-            self.x,
-            self.y,
+            self.x - camera.x,
+            self.y - camera.y,
         )

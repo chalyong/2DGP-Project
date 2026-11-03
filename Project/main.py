@@ -2,6 +2,7 @@ from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, u
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE
 
 import game_world
+import camera
 from background import Background
 from player import Player
 
@@ -23,10 +24,14 @@ def handle_events():
 
 def update_world():
     game_world.update()
+    camera.follow(player.x)
 
 
 def reset_world():
+    global player
+
     game_world.clear()
+    camera.reset()
     background = Background()
     game_world.add_object(background, depth=0)
     player = Player()
