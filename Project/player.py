@@ -9,6 +9,7 @@ class Player:
         self.y = 300
         self.speed = 3
         self.frame = 0
+        self.frame_timer = 0
         self.direction = "right"
         self.pressed_keys = set()
         self.idle_image = load_image("assets/player/player_idle_right.png")
@@ -45,6 +46,12 @@ class Player:
             elif SDLK_RIGHT in self.pressed_keys:
                 self.x += self.speed
                 self.direction = "right"
+
+        self.frame_timer += 1
+        frame_interval = 6 if self.state == "RUN" else 12
+        if self.frame_timer >= frame_interval:
+            self.frame = (self.frame + 1) % 4
+            self.frame_timer = 0
 
     def draw(self):
         image = self.run_image if self.state == "RUN" else self.idle_image
