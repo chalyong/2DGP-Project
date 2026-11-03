@@ -9,6 +9,12 @@ def add_object(obj, depth=DEFAULT_DEPTH):
     world[depth].append(obj)
 
 
+def add_objects(objs, depth=DEFAULT_DEPTH):
+    if not 0 <= depth < MAX_DEPTH:
+        raise ValueError(f"depth must be between 0 and {MAX_DEPTH - 1}")
+    world[depth] += objs
+
+
 def remove_object(obj):
     for objects in world:
         if obj in objects:
