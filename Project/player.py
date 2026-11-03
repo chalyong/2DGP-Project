@@ -5,7 +5,7 @@ from transitions import Machine
 import camera
 
 SPRITE_FRAME_SIZE = 64
-SPRITE_DRAW_WIDTH = 48
+SPRITE_DRAW_WIDTH = 56
 SPRITE_DRAW_HEIGHT = 64
 
 
