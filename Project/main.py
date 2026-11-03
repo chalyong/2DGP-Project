@@ -2,6 +2,7 @@ from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, u
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE
 
 import game_world
+from background import Background
 from player import Player
 
 
@@ -24,6 +25,8 @@ def update_world():
 
 def reset_world():
     game_world.world.clear()
+    background = Background()
+    game_world.add_object(background)
     player = Player()
     game_world.add_object(player)
 
