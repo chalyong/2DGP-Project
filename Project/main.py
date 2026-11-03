@@ -4,6 +4,7 @@ from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE
 import game_world
 import camera
 from background import Background
+from building import Building
 from player import Player
 
 
@@ -34,8 +35,16 @@ def reset_world():
     camera.reset()
     background = Background()
     game_world.add_object(background, depth=0)
+    buildings = [
+        Building("assets/buildings/house_exterior.png", 160),
+        Building("assets/buildings/farm_exterior.png", 480),
+        Building("assets/buildings/ranch_exterior.png", 800),
+        Building("assets/buildings/buffet_exterior.png", 1120),
+        Building("assets/buildings/mine_exterior.png", 1440),
+    ]
+    game_world.add_objects(buildings, depth=1)
     player = Player()
-    game_world.add_object(player, depth=1)
+    game_world.add_object(player, depth=2)
 
 
 def render_world():
