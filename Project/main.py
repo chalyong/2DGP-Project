@@ -1,7 +1,8 @@
-from pico2d import close_canvas, delay, get_events, open_canvas
+from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, update_canvas
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE
 
 import game_world
+from player import Player
 
 
 running = True
@@ -21,13 +22,21 @@ def update_world():
     game_world.update()
 
 
+def reset_world():
+    game_world.world.clear()
+    player = Player()
+    game_world.add_object(player)
+
+
 def render_world():
-    # Rendering is intentionally empty during the initial window test.
-    pass
+    clear_canvas()
+    game_world.render()
+    update_canvas()
 
 
 if __name__ == "__main__":
     open_canvas()
+    reset_world()
     try:
         while running:
             handle_events()
