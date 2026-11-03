@@ -21,6 +21,14 @@ def clear():
         objects.clear()
 
 
+def handle_event(event):
+    for objects in world:
+        for obj in objects:
+            handle_event_method = getattr(obj, "handle_event", None)
+            if handle_event_method is not None:
+                handle_event_method(event)
+
+
 def update():
     for objects in world:
         for obj in objects:
