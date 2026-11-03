@@ -4,6 +4,10 @@ from transitions import Machine
 
 import camera
 
+SPRITE_FRAME_SIZE = 64
+SPRITE_DRAW_WIDTH = 48
+SPRITE_DRAW_HEIGHT = 64
+
 
 class Player:
     def __init__(self):
@@ -59,12 +63,14 @@ class Player:
         image = self.run_image if self.state == "RUN" else self.idle_image
         flip = "h" if self.direction == "left" else ""
         image.clip_composite_draw(
-            self.frame * 64,
+            self.frame * SPRITE_FRAME_SIZE,
             0,
-            64,
-            64,
+            SPRITE_FRAME_SIZE,
+            SPRITE_FRAME_SIZE,
             0,
             flip,
             self.x - camera.x,
             self.y - camera.y,
+            SPRITE_DRAW_WIDTH,
+            SPRITE_DRAW_HEIGHT,
         )
