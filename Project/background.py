@@ -4,8 +4,12 @@ import camera
 
 
 class Background:
+    image = None
+
     def __init__(self):
-        self.image = load_image("assets/background/world_background.png")
+        if Background.image is None:
+            Background.image = load_image("assets/background/world_background.png")
+        self.image = Background.image
 
     def update(self):
         pass

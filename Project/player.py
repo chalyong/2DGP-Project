@@ -10,6 +10,9 @@ SPRITE_DRAW_HEIGHT = 64
 
 
 class Player:
+    idle_image = None
+    run_image = None
+
     def __init__(self):
         self.x = 64
         self.y = 300
@@ -18,8 +21,12 @@ class Player:
         self.frame_timer = 0
         self.direction = "right"
         self.pressed_keys = set()
-        self.idle_image = load_image("assets/player/player_idle_right.png")
-        self.run_image = load_image("assets/player/player_walk_right.png")
+        if Player.idle_image is None:
+            Player.idle_image = load_image("assets/player/player_idle_right.png")
+        if Player.run_image is None:
+            Player.run_image = load_image("assets/player/player_walk_right.png")
+        self.idle_image = Player.idle_image
+        self.run_image = Player.run_image
         self.machine = Machine(
             model=self,
             states=["IDLE", "RUN"],
