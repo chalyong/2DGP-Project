@@ -5,6 +5,7 @@ import game_world
 import camera
 from background import Background
 from building import Building
+from mine_merchant import MineMerchant
 from player import Player
 
 
@@ -62,6 +63,8 @@ def enter_mine():
     if player.state == "RUN":
         player.stop_running()
     game_world.add_object(background, depth=0)
+    merchant = MineMerchant(300, 150)
+    game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
     camera.reset()
 
