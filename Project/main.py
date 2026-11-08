@@ -1,5 +1,5 @@
 from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, update_canvas
-from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE
+from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
 
 import game_world
 import camera
@@ -19,6 +19,12 @@ def handle_events():
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and abs(player.x - 1440) <= 100
+        ):
+            enter_mine()
         else:
             game_world.handle_event(event)
 
@@ -29,7 +35,7 @@ def update_world():
 
 
 def reset_world():
-    global player
+    global background, player
 
     game_world.clear()
     camera.reset()
@@ -47,6 +53,19 @@ def reset_world():
     game_world.add_object(player, depth=2)
 
 
+def enter_mine():
+    game_world.clear()
+    background.use_mine_map()
+    player.x = 64
+    player.y = 150
+    player.pressed_keys.clear()
+    if player.state == "RUN":
+        player.stop_running()
+    game_world.add_object(background, depth=0)
+    game_world.add_object(player, depth=2)
+    camera.reset()
+
+
 def render_world():
     clear_canvas()
     game_world.render()
@@ -56,6 +75,7 @@ def render_world():
 if __name__ == "__main__":
     open_canvas()
     reset_world()
+    enter_mine()
     try:
         while running:
             handle_events()
