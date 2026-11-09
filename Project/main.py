@@ -8,6 +8,8 @@ from building import Building
 from mine_entrance import MineEntrance
 from mine_merchant import MineMerchant
 from mine_exit import MineExit
+from tunnel_exit import TunnelExit
+from tunnel_ore import TunnelOre
 from player import Player
 from hud import Hud
 from shop import Shop
@@ -15,6 +17,7 @@ from shop import Shop
 
 running = True
 in_mine = False
+in_tunnel = False
 
 
 def handle_events():
@@ -28,14 +31,24 @@ def handle_events():
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
-            and in_mine
+            and in_tunnel
             and abs(player.x - 64) <= 100
             and abs(player.y - 150) <= 80
         ):
-            leave_mine()
+            leave_tunnel()
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
+            and in_mine
+            and not in_tunnel
+            and abs(player.x - 486) <= 100
+            and abs(player.y - 180) <= 80
+        ):
+            enter_tunnel()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and not in_mine
             and abs(player.x - 1440) <= 100
         ):
             enter_mine()
@@ -49,9 +62,10 @@ def update_world():
 
 
 def reset_world():
-    global background, player, in_mine
+    global background, player, in_mine, in_tunnel
 
     in_mine = False
+    in_tunnel = False
     game_world.clear()
     camera.reset()
     background = Background()
@@ -70,9 +84,10 @@ def reset_world():
 
 
 def enter_mine():
-    global in_mine
+    global in_mine, in_tunnel
 
     in_mine = True
+    in_tunnel = False
     game_world.clear()
     background.use_mine_map()
     player.x = 64
@@ -99,6 +114,35 @@ def enter_mine():
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant), depth=8)
     camera.reset()
+
+
+def enter_tunnel():
+    global in_tunnel
+
+    in_tunnel = True
+    game_world.clear()
+    background.use_tunnel_map()
+    player.x = 64
+    player.y = 150
+    player.pressed_keys.clear()
+    if player.state == "RUN":
+        player.stop_running()
+    game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
+    game_world.add_object(TunnelExit(64, 150), depth=1)
+    game_world.add_object(
+        TunnelOre(800, 350, "assets/ore/ore_stone.png"),
+        depth=1,
+    )
+    game_world.add_object(player, depth=2)
+    camera.reset()
+
+
+def leave_tunnel():
+    enter_mine()
+    player.x = 486
+    player.y = 150
+    camera.follow(player.x)
 
 
 def leave_mine():
