@@ -64,8 +64,14 @@ def enter_mine():
     if player.state == "RUN":
         player.stop_running()
     game_world.add_object(background, depth=0)
-    for x in (486, 786, 1086, 1396):
-        game_world.add_object(MineEntrance(x, 180), depth=1)
+    entrances = (
+        (486, "assets/ore/ore_stone.png"),
+        (786, "assets/ore/ore_coal.png"),
+        (1086, "assets/ore/ore_iron.png"),
+        (1396, "assets/ore/ore_gold.png"),
+    )
+    for x, ore_path in entrances:
+        game_world.add_object(MineEntrance(x, 180, ore_path), depth=1)
     merchant = MineMerchant(300, 150)
     game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
