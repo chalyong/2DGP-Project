@@ -1,5 +1,5 @@
-from pico2d import load_font, load_image
-from sdl2 import SDL_KEYDOWN, SDLK_SPACE
+from pico2d import get_time, load_font, load_image
+from sdl2 import SDL_KEYDOWN, SDL_MOUSEWHEEL, SDLK_SPACE
 
 
 class Shop:
@@ -11,6 +11,8 @@ class Shop:
         self.player = player
         self.merchant = merchant
         self.open = False
+        self.page = 0
+        self.page_change_time = -0.2
         if Shop.panel is None:
             Shop.panel = load_image("assets/ui/shop_panel.png")
         if Shop.title_font is None:
@@ -26,6 +28,20 @@ class Shop:
             and abs(self.player.y - self.merchant.y) <= 80
         ):
             self.open = not self.open
+            if not self.open:
+                self.page = 0
+        elif (
+            event.type == SDL_MOUSEWHEEL
+            and self.open
+            and get_time() - self.page_change_time >= 0.2
+        ):
+            if event.y < 0:
+                self.page = min(self.page + 1, 1)
+            elif event.y > 0:
+                self.page = max(self.page - 1, 0)
+            else:
+                return
+            self.page_change_time = get_time()
 
     def update(self):
         pass
@@ -34,11 +50,23 @@ class Shop:
         if not self.open:
             return
         self.panel.draw_to_origin(40, 100)
-        self.title_font.draw(310, 440, "MINING SHOP", (255, 239, 177))
-        self.item_font.draw(100, 360, "WOOD PICKAXE", (235, 235, 235))
-        self.item_font.draw(600, 360, "$ 100", (255, 224, 120))
-        self.item_font.draw(100, 280, "STONE PICKAXE", (235, 235, 235))
-        self.item_font.draw(600, 280, "$ 300", (255, 224, 120))
-        self.item_font.draw(100, 200, "IRON PICKAXE", (235, 235, 235))
-        self.item_font.draw(600, 200, "$ 800", (255, 224, 120))
-        self.item_font.draw(300, 130, "SPACE: CLOSE", (180, 190, 205))
+        title = f"MINING SHOP  {self.page + 1}/2"
+        self.title_font.draw(260, 440, title, (255, 239, 177))
+        items = (
+            (
+                ("WOOD PICKAXE", "$ 100"),
+                ("STONE PICKAXE", "$ 300"),
+                ("IRON PICKAXE", "$ 800"),
+            ),
+            (
+                ("COAL TUNNEL PASS", "$ 500"),
+                ("IRON TUNNEL PASS", "$ 1,200"),
+                ("GOLD TUNNEL PASS", "$ 3,000"),
+            ),
+        )[self.page]
+        for index, (name, price) in enumerate(items):
+            y = 360 - index * 80
+            self.item_font.draw(100, y, name, (235, 235, 235))
+            self.item_font.draw(600, y, price, (255, 224, 120))
+        self.item_font.draw(150, 130, "MOUSE WHEEL: CHANGE PAGE", (180, 190, 205))
+        self.item_font.draw(480, 130, "SPACE: CLOSE", (180, 190, 205))
