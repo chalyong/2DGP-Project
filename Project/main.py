@@ -7,6 +7,7 @@ from background import Background
 from building import Building
 from mine_entrance import MineEntrance
 from mine_merchant import MineMerchant
+from mine_exit import MineExit
 from player import Player
 from hud import Hud
 from shop import Shop
@@ -68,6 +69,7 @@ def enter_mine():
         player.stop_running()
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
+    game_world.add_object(MineExit(64, 150), depth=1)
     entrances = (
         (486, "assets/ore/ore_stone.png", False),
         (786, "assets/ore/ore_coal.png", True),
