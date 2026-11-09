@@ -8,6 +8,7 @@ from building import Building
 from mine_entrance import MineEntrance
 from mine_merchant import MineMerchant
 from player import Player
+from hud import Hud
 
 
 running = True
@@ -43,6 +44,7 @@ def reset_world():
     camera.reset()
     background = Background()
     game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
     buildings = [
         Building("assets/buildings/house_exterior.png", 160),
         Building("assets/buildings/farm_exterior.png", 480),
@@ -64,6 +66,7 @@ def enter_mine():
     if player.state == "RUN":
         player.stop_running()
     game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
     entrances = (
         (486, "assets/ore/ore_stone.png", False),
         (786, "assets/ore/ore_coal.png", True),
