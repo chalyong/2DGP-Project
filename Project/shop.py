@@ -28,6 +28,7 @@ class Shop:
             and abs(self.player.y - self.merchant.y) <= 80
         ):
             self.open = not self.open
+            self.player.set_movement_locked(self.open)
             if not self.open:
                 self.page = 0
         elif (

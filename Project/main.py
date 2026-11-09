@@ -41,6 +41,15 @@ def handle_events():
             and event.key == SDLK_SPACE
             and in_mine
             and not in_tunnel
+            and abs(player.x - 64) <= 100
+            and abs(player.y - 150) <= 80
+        ):
+            leave_mine()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and in_mine
+            and not in_tunnel
             and abs(player.x - 486) <= 100
             and abs(player.y - 180) <= 80
         ):

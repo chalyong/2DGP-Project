@@ -21,6 +21,7 @@ class Player:
         self.frame_timer = 0
         self.direction = "right"
         self.pressed_keys = set()
+        self.movement_locked = False
         if Player.idle_image is None:
             Player.idle_image = load_image("assets/player/player_idle_right.png")
         if Player.run_image is None:
@@ -37,6 +38,11 @@ class Player:
         self.machine.add_transition("stop_running", "RUN", "IDLE")
 
     def handle_event(self, event):
+        if self.movement_locked:
+            self.pressed_keys.clear()
+            self._update_state()
+            return
+
         if event.type == SDL_KEYDOWN and event.key in (SDLK_LEFT, SDLK_RIGHT):
             self.pressed_keys.add(event.key)
         elif event.type == SDL_KEYUP and event.key in (SDLK_LEFT, SDLK_RIGHT):
@@ -52,6 +58,10 @@ class Player:
             self.stop_running()
 
     def update(self):
+        if self.movement_locked:
+            self.pressed_keys.clear()
+            self._update_state()
+
         if self.state == "RUN":
             if SDLK_LEFT in self.pressed_keys:
                 self.x = max(32, self.x - self.speed)
@@ -65,6 +75,12 @@ class Player:
         if self.frame_timer >= frame_interval:
             self.frame = (self.frame + 1) % 4
             self.frame_timer = 0
+
+    def set_movement_locked(self, locked):
+        self.movement_locked = locked
+        if locked:
+            self.pressed_keys.clear()
+            self._update_state()
 
     def draw(self):
         image = self.run_image if self.state == "RUN" else self.idle_image
