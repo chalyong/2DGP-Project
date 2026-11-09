@@ -14,6 +14,7 @@ from shop import Shop
 
 
 running = True
+in_mine = False
 
 
 def handle_events():
@@ -24,6 +25,14 @@ def handle_events():
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and in_mine
+            and abs(player.x - 64) <= 100
+            and abs(player.y - 150) <= 80
+        ):
+            leave_mine()
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -40,8 +49,9 @@ def update_world():
 
 
 def reset_world():
-    global background, player
+    global background, player, in_mine
 
+    in_mine = False
     game_world.clear()
     camera.reset()
     background = Background()
@@ -60,6 +70,9 @@ def reset_world():
 
 
 def enter_mine():
+    global in_mine
+
+    in_mine = True
     game_world.clear()
     background.use_mine_map()
     player.x = 64
@@ -86,6 +99,13 @@ def enter_mine():
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant), depth=8)
     camera.reset()
+
+
+def leave_mine():
+    reset_world()
+    player.x = 1440
+    player.y = 300
+    camera.follow(player.x)
 
 
 def render_world():
