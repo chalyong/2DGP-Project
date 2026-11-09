@@ -9,6 +9,7 @@ from mine_entrance import MineEntrance
 from mine_merchant import MineMerchant
 from player import Player
 from hud import Hud
+from shop import Shop
 
 
 running = True
@@ -81,6 +82,7 @@ def enter_mine():
     merchant = MineMerchant(300, 150)
     game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
+    game_world.add_object(Shop(player, merchant), depth=8)
     camera.reset()
 
 
