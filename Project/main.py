@@ -32,7 +32,7 @@ def handle_events():
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
             and in_tunnel
-            and abs(player.x - 64) <= 100
+            and abs(player.x - 64) <= 50
             and abs(player.y - 150) <= 80
         ):
             leave_tunnel()
@@ -41,7 +41,7 @@ def handle_events():
             and event.key == SDLK_SPACE
             and in_mine
             and not in_tunnel
-            and abs(player.x - 64) <= 100
+            and abs(player.x - 64) <= 50
             and abs(player.y - 150) <= 80
         ):
             leave_mine()
@@ -50,7 +50,7 @@ def handle_events():
             and event.key == SDLK_SPACE
             and in_mine
             and not in_tunnel
-            and abs(player.x - 486) <= 100
+            and abs(player.x - 486) <= 50
             and abs(player.y - 180) <= 80
         ):
             enter_tunnel()
@@ -58,7 +58,7 @@ def handle_events():
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
             and not in_mine
-            and abs(player.x - 1440) <= 100
+            and abs(player.x - 1440) <= 50
         ):
             enter_mine()
         else:
