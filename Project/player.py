@@ -121,10 +121,10 @@ class Player:
                 self.mining_image.h,
                 0,
                 "h" if self.direction == "left" else "",
-                self.x - camera.x,
-                self.y - camera.y - (8 if self.mining_frame in (1, 2) else 0),
-                70 if self.mining_frame in (1, 2) else SPRITE_DRAW_WIDTH,
-                80 if self.mining_frame in (1, 2) else SPRITE_DRAW_HEIGHT,
+                self.x - camera.x+4,
+                self.y - camera.y+ 8,
+                SPRITE_DRAW_WIDTH + 28,
+                SPRITE_DRAW_HEIGHT + 20,
             )
             return
 
