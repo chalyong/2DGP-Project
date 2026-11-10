@@ -5,6 +5,7 @@ from transitions import Machine
 import camera
 
 SPRITE_FRAME_SIZE = 64
+MINING_FRAME_COUNT = 7
 SPRITE_DRAW_WIDTH = 56
 SPRITE_DRAW_HEIGHT = 64
 
@@ -12,6 +13,7 @@ SPRITE_DRAW_HEIGHT = 64
 class Player:
     idle_image = None
     run_image = None
+    mining_image = None
 
     def __init__(self):
         self.x = 64
@@ -26,8 +28,17 @@ class Player:
             Player.idle_image = load_image("assets/player/player_idle_right.png")
         if Player.run_image is None:
             Player.run_image = load_image("assets/player/player_walk_right.png")
+        if Player.mining_image is None:
+            Player.mining_image = load_image(
+                "assets/player/player_mining_right.png"
+            )
         self.idle_image = Player.idle_image
         self.run_image = Player.run_image
+        self.mining_image = Player.mining_image
+        self.mining_frame_width = self.mining_image.w // MINING_FRAME_COUNT
+        self.mining = False
+        self.mining_frame = 0
+        self.mining_frame_timer = 0
         self.machine = Machine(
             model=self,
             states=["IDLE", "RUN"],
@@ -50,6 +61,15 @@ class Player:
 
         self._update_state()
 
+    def start_mining(self):
+        if self.mining:
+            return
+        self.mining = True
+        self.mining_frame = 0
+        self.mining_frame_timer = 0
+        self.pressed_keys.clear()
+        self._update_state()
+
     def _update_state(self):
         is_running = bool(self.pressed_keys)
         if is_running and self.state == "IDLE":
@@ -61,6 +81,16 @@ class Player:
         if self.movement_locked:
             self.pressed_keys.clear()
             self._update_state()
+
+        if self.mining:
+            self.mining_frame_timer += 1
+            if self.mining_frame_timer >= 4:
+                self.mining_frame += 1
+                self.mining_frame_timer = 0
+                if self.mining_frame >= MINING_FRAME_COUNT:
+                    self.mining = False
+                    self.mining_frame = 0
+            return
 
         if self.state == "RUN":
             if SDLK_LEFT in self.pressed_keys:
@@ -83,6 +113,21 @@ class Player:
             self._update_state()
 
     def draw(self):
+        if self.mining:
+            self.mining_image.clip_composite_draw(
+                self.mining_frame * self.mining_frame_width,
+                0,
+                self.mining_frame_width,
+                self.mining_image.h,
+                0,
+                "h" if self.direction == "left" else "",
+                self.x - camera.x,
+                self.y - camera.y - (8 if self.mining_frame in (1, 2) else 0),
+                70 if self.mining_frame in (1, 2) else SPRITE_DRAW_WIDTH,
+                80 if self.mining_frame in (1, 2) else SPRITE_DRAW_HEIGHT,
+            )
+            return
+
         image = self.run_image if self.state == "RUN" else self.idle_image
         flip = "h" if self.direction == "left" else ""
         image.clip_composite_draw(
