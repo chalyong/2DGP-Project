@@ -13,6 +13,7 @@ from tunnel_ore import TunnelOre
 from player import Player
 from hud import Hud
 from shop import Shop
+from inventory import Inventory
 
 
 running = True
@@ -28,6 +29,8 @@ def handle_events():
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
+        elif inventory.open:
+            game_world.handle_event(event)
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -71,7 +74,7 @@ def update_world():
 
 
 def reset_world():
-    global background, player, in_mine, in_tunnel
+    global background, player, inventory, in_mine, in_tunnel
 
     in_mine = False
     in_tunnel = False
@@ -90,6 +93,8 @@ def reset_world():
     game_world.add_objects(buildings, depth=1)
     player = Player()
     game_world.add_object(player, depth=2)
+    inventory = Inventory(player)
+    game_world.add_object(inventory, depth=8)
 
 
 def enter_mine():
@@ -122,6 +127,7 @@ def enter_mine():
     game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant), depth=8)
+    game_world.add_object(Inventory(player), depth=8)
     camera.reset()
 
 
@@ -144,6 +150,7 @@ def enter_tunnel():
         depth=1,
     )
     game_world.add_object(player, depth=2)
+    game_world.add_object(Inventory(player), depth=8)
     camera.reset()
 
 

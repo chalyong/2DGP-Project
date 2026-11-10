@@ -24,7 +24,7 @@ class Shop:
         if (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
-            and abs(self.player.x - self.merchant.x) <= 100
+            and abs(self.player.x - self.merchant.x) <= 50
             and abs(self.player.y - self.merchant.y) <= 80
         ):
             self.open = not self.open
