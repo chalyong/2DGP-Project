@@ -146,7 +146,13 @@ def enter_tunnel():
     game_world.add_object(Hud(), depth=9)
     game_world.add_object(TunnelExit(64, 150), depth=1)
     game_world.add_object(
-        TunnelOre(800, 350, "assets/ore/ore_stone.png"),
+        TunnelOre(
+            800,
+            350,
+            "assets/ore/ore_stone.png",
+            player,
+            "stone",
+        ),
         depth=1,
     )
     game_world.add_object(player, depth=2)
@@ -178,6 +184,7 @@ if __name__ == "__main__":
     open_canvas()
     reset_world()
     enter_mine()
+    enter_tunnel()
     try:
         while running:
             handle_events()
