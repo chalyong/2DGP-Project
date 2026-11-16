@@ -5,26 +5,26 @@ import camera
 import game_state
 
 
-# name, price, description, required ore (name, count) or None
+# name, price, description, required ore (name, count) or None, kind, kind target
 ITEM_PAGES = (
     (
-        ("WOOD PICKAXE", 100, "stone+2", None),
-        ("STONE PICKAXE", 300, "stone+3, coal+2", ("stone", 10)),
-        ("IRON PICKAXE", 800, "stone+5, coal+3, iron+2", ("iron", 10)),
+        ("WOOD PICKAXE", 100, "stone+2", None, "tool", None),
+        ("STONE PICKAXE", 300, "stone+3, coal+2", ("stone", 10), "tool", None),
+        ("IRON PICKAXE", 800, "stone+5, coal+3, iron+2", ("iron", 10), "tool", None),
     ),
     (
-        ("GOLD PICKAXE", 1500, "stone+10, coal+5, iron+3, gold+2", ("gold", 10)),
-        ("STONE MINER", 1000, "stone miner+1", None),
-        ("COAL MINER", 2500, "coal miner+1", None),
+        ("GOLD PICKAXE", 1500, "stone+10, coal+5, iron+3, gold+2", ("gold", 10), "tool", None),
+        ("STONE MINER", 1000, "stone miner+1", None, "miner", "stone"),
+        ("COAL MINER", 2500, "coal miner+1", None, "miner", "coal"),
     ),
     (
-        ("IRON MINER", 5000, "iron miner+1", None),
-        ("GOLD MINER", 10000, "gold miner+1", None),
-        ("COAL TUNNEL PASS", 500, "coal mine open", None),
+        ("IRON MINER", 5000, "iron miner+1", None, "miner", "iron"),
+        ("GOLD MINER", 10000, "gold miner+1", None, "miner", "gold"),
+        ("COAL TUNNEL PASS", 500, "coal mine open", None, "pass", "coal"),
     ),
     (
-        ("IRON TUNNEL PASS", 1200, "iron mine open", None),
-        ("GOLD TUNNEL PASS", 3000, "gold mine open", None),
+        ("IRON TUNNEL PASS", 1200, "iron mine open", None, "pass", "iron"),
+        ("GOLD TUNNEL PASS", 3000, "gold mine open", None, "pass", "gold"),
     ),
 )
 
@@ -94,10 +94,17 @@ class Shop:
                     break
 
     def _buy(self, item):
-        name, price, description, requirement = item
-        tool = f"{name}"
-        if tool in game_state.tools:
+        name, price, description, requirement, kind, target = item
+        if kind == "tool" and name in game_state.tools:
             self.message = "ALREADY OWNED"
+            self.message_time = get_time()
+            return
+        if kind == "miner" and not game_state.open_tunnels[target]:
+            self.message = f"OPEN {target.upper()} TUNNEL FIRST"
+            self.message_time = get_time()
+            return
+        if kind == "pass" and game_state.open_tunnels[target]:
+            self.message = "ALREADY OPEN"
             self.message_time = get_time()
             return
         if game_state.money < price:
@@ -112,7 +119,12 @@ class Shop:
                 return
             game_state.collected_items[ore] -= count
         game_state.money -= price
-        game_state.tools.append(tool)
+        if kind == "tool":
+            game_state.tools.append(name)
+        elif kind == "miner":
+            game_state.miners[target] += 1
+        elif kind == "pass":
+            game_state.open_tunnels[target] = True
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -126,7 +138,7 @@ class Shop:
         self.panel.draw_to_origin(40, 100)
         title = f"MINING SHOP  {self.page + 1}/4"
         self.title_font.draw(260, 440, title, (255, 239, 177))
-        for index, (name, price, description, requirement) in enumerate(
+        for index, (name, price, description, requirement, kind, target) in enumerate(
             ITEM_PAGES[self.page]
         ):
             y = 360 - index * 80

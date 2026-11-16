@@ -11,3 +11,15 @@ collected_items = {
 }
 cooked_items = {}
 tools = []
+open_tunnels = {
+    "stone": True,
+    "coal": False,
+    "iron": False,
+    "gold": False,
+}
+miners = {
+    "stone": 0,
+    "coal": 0,
+    "iron": 0,
+    "gold": 0,
+}

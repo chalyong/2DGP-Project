@@ -2,6 +2,7 @@ from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, u
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
 
 import game_world
+import game_state
 import camera
 from background import Background
 from building import Building
@@ -113,14 +114,19 @@ def enter_mine():
     game_world.add_object(Hud(), depth=9)
     game_world.add_object(MineExit(64, 150), depth=1)
     entrances = (
-        (486, "assets/ore/ore_stone.png", False),
-        (786, "assets/ore/ore_coal.png", True),
-        (1086, "assets/ore/ore_iron.png", True),
-        (1396, "assets/ore/ore_gold.png", True),
+        (486, "stone"),
+        (786, "coal"),
+        (1086, "iron"),
+        (1396, "gold"),
     )
-    for x, ore_path, locked in entrances:
+    for x, ore_name in entrances:
         game_world.add_object(
-            MineEntrance(x, 180, ore_path, locked),
+            MineEntrance(
+                x,
+                180,
+                f"assets/ore/ore_{ore_name}.png",
+                ore_name,
+            ),
             depth=1,
         )
     merchant = MineMerchant(300, 150)

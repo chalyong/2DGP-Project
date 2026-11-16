@@ -1,16 +1,17 @@
 from pico2d import load_image
 
 import camera
+import game_state
 
 
 class MineEntrance:
     image = None
     locked_image = None
 
-    def __init__(self, x, y, ore_path, locked=False):
+    def __init__(self, x, y, ore_path, ore_name):
         self.x = x
         self.y = y
-        self.locked = locked
+        self.ore_name = ore_name
         if MineEntrance.image is None:
             MineEntrance.image = load_image(
                 "assets/buildings/mine_wood_support_entrance.png"
@@ -26,7 +27,7 @@ class MineEntrance:
 
     def draw(self):
         self.image.draw(self.x - camera.x, self.y - camera.y)
-        if self.locked:
+        if not game_state.open_tunnels[self.ore_name]:
             self.locked_image.draw(
                 self.x - camera.x,
                 self.y - camera.y - 10,
