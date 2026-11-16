@@ -96,6 +96,7 @@ def handle_events():
 
 
 def update_world():
+    game_state.update_miner_income()
     game_world.update()
     camera.follow(player.x)
 

@@ -43,3 +43,22 @@ def mining_yield(ore_name):
         if pickaxe in tools:
             return PICKAXE_YIELDS[pickaxe].get(ore_name, 1)
     return 1
+
+
+# passive income: every MINER_CYCLE_SECONDS each purchased miner yields 1 ore,
+# whether or not the player is inside the tunnel
+MINER_CYCLE_SECONDS = 2.0
+miner_cycle_count = 0
+_miner_cycle_last = get_time()
+
+
+def update_miner_income():
+    global miner_cycle_count, _miner_cycle_last
+
+    current_time = get_time()
+    while current_time - _miner_cycle_last >= MINER_CYCLE_SECONDS:
+        _miner_cycle_last += MINER_CYCLE_SECONDS
+        miner_cycle_count += 1
+        for ore_name, count in miners.items():
+            if count:
+                collected_items[ore_name] += count

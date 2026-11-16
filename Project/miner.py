@@ -31,6 +31,7 @@ class Miner:
         self.frame = 0
         self.frame_timer = 0.0
         self.last_update_time = get_time()
+        self.last_cycle = game_state.miner_cycle_count
         self.notification = None
         self.notification_started = 0
         if Miner.image is None:
@@ -47,10 +48,10 @@ class Miner:
         while self.frame_timer >= FRAME_DURATION:
             self.frame = (self.frame + 1) % len(FRAMES)
             self.frame_timer -= FRAME_DURATION
-            if self.frame == 0:
-                game_state.collected_items[self.ore_name] += 1
-                self.notification = f"{self.ore_name.upper()} * 1"
-                self.notification_started = current_time
+        if game_state.miner_cycle_count != self.last_cycle:
+            self.last_cycle = game_state.miner_cycle_count
+            self.notification = f"{self.ore_name.upper()} * 1"
+            self.notification_started = current_time
 
     def draw(self):
         left, bottom, width, height = FRAMES[self.frame]
