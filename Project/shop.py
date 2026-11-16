@@ -5,6 +5,8 @@ import camera
 import game_state
 
 
+MAX_MINERS_PER_ZONE = 10
+
 # name, price, description, required ore (name, count) or None, kind, kind target
 ITEM_PAGES = (
     (
@@ -103,6 +105,16 @@ class Shop:
             self.message = f"OPEN {target.upper()} TUNNEL FIRST"
             self.message_time = get_time()
             return
+        if (
+            kind == "miner"
+            and game_state.miners[target] >= MAX_MINERS_PER_ZONE
+        ):
+            self.message = (
+                f"{target.upper()} MINER LIMIT "
+                f"({MAX_MINERS_PER_ZONE})"
+            )
+            self.message_time = get_time()
+            return
         if kind == "pass" and game_state.open_tunnels[target]:
             self.message = "ALREADY OPEN"
             self.message_time = get_time()
@@ -149,6 +161,19 @@ class Shop:
                 image = self.ore_images[ore]
                 image.draw(450, y + 6, 32, 32)
                 self.item_font.draw(480, y, f"x{count}", (255, 224, 120))
+            if kind == "miner":
+                owned = game_state.miners[target]
+                count_color = (
+                    (255, 224, 120)
+                    if owned < MAX_MINERS_PER_ZONE
+                    else (255, 150, 120)
+                )
+                self.item_font.draw(
+                    450,
+                    y,
+                    f"{owned}/{MAX_MINERS_PER_ZONE}",
+                    count_color,
+                )
             if description:
                 self.description_font.draw(
                     100, y - 20, description, (180, 190, 205)
