@@ -6,6 +6,7 @@ class Shop:
     panel = None
     title_font = None
     item_font = None
+    description_font = None
 
     def __init__(self, player, merchant):
         self.player = player
@@ -19,6 +20,8 @@ class Shop:
             Shop.title_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 28)
         if Shop.item_font is None:
             Shop.item_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 18)
+        if Shop.description_font is None:
+            Shop.description_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
 
     def handle_event(self, event):
         if (
@@ -55,27 +58,32 @@ class Shop:
         self.title_font.draw(260, 440, title, (255, 239, 177))
         items = (
             (
-                ("WOOD PICKAXE", "$ 100"),
-                ("STONE PICKAXE", "$ 300"),
-                ("IRON PICKAXE", "$ 800"),
+                ("WOOD PICKAXE", "$ 100", "stone+2"),
+                ("STONE PICKAXE", "$ 300", "stone+3, coal+2"),
+                ("IRON PICKAXE", "$ 800", "stone+5, coal+3, iron+2"),
             ),
             (
-                ("COAL TUNNEL PASS", "$ 500"),
-                ("IRON TUNNEL PASS", "$ 1,200"),
-                ("GOLD TUNNEL PASS", "$ 3,000"),
+                ("GOLD PICKAXE", "$ 1,500", "stone+10, coal+5, iron+3, gold+2"),
+                ("STONE MINER", "$ 1,000", "stone miner+1"),
+                ("COAL MINER", "$ 2,500", "coal miner+1"),
             ),
             (
-                ("STONE MINE MINER", "()G"),
-                ("COAL MINE MINER", "()G"),
-                ("IRON MINE MINER", "()G"),
+                ("IRON MINER", "$ 5,000", "iron miner+1"),
+                ("GOLD MINER", "$ 10,000", "gold miner+1"),
+                ("COAL TUNNEL PASS", "$ 500", "coal mine open"),
             ),
             (
-                ("GOLD MINE MINER", "()G"),
+                ("IRON TUNNEL PASS", "$ 1,200", "iron mine open"),
+                ("GOLD TUNNEL PASS", "$ 3,000", "gold mine open"),
             ),
         )[self.page]
-        for index, (name, price) in enumerate(items):
+        for index, (name, price, description) in enumerate(items):
             y = 360 - index * 80
             self.item_font.draw(100, y, name, (235, 235, 235))
             self.item_font.draw(600, y, price, (255, 224, 120))
+            if description:
+                self.description_font.draw(
+                    100, y - 20, description, (180, 190, 205)
+                )
         self.item_font.draw(150, 130, "MOUSE WHEEL: CHANGE PAGE", (180, 190, 205))
         self.item_font.draw(480, 130, "SPACE: CLOSE", (180, 190, 205))
