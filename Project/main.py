@@ -11,6 +11,7 @@ from mine_merchant import MineMerchant
 from mine_exit import MineExit
 from tunnel_exit import TunnelExit
 from tunnel_ore import TunnelOre
+from miner import Miner
 from player import Player
 from hud import Hud
 from shop import Shop
@@ -29,6 +30,15 @@ ENTRANCES = (
     (1396, "gold"),
 )
 ENTRANCE_X = dict((ore_name, x) for x, ore_name in ENTRANCES)
+
+# purchased miners: fixed slots centered on the tunnel, x grows per purchase
+MINER_SLOT_SPACING = 60
+MINER_SLOT_CENTER_X = 800
+MINER_SLOT_Y = 150
+
+
+def miner_slot_x(index):
+    return MINER_SLOT_CENTER_X + (index - 4.5) * MINER_SLOT_SPACING
 
 
 def handle_events():
@@ -172,6 +182,11 @@ def enter_tunnel(ore_name):
         ),
         depth=1,
     )
+    for index in range(game_state.miners[ore_name]):
+        game_world.add_object(
+            Miner(miner_slot_x(index), MINER_SLOT_Y),
+            depth=1,
+        )
     game_world.add_object(player, depth=2)
     game_world.add_object(Inventory(player), depth=8)
     camera.reset()
