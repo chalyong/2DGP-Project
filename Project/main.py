@@ -184,7 +184,7 @@ def enter_tunnel(ore_name):
     )
     for index in range(game_state.miners[ore_name]):
         game_world.add_object(
-            Miner(miner_slot_x(index), MINER_SLOT_Y),
+            Miner(miner_slot_x(index), MINER_SLOT_Y, ore_name),
             depth=1,
         )
     game_world.add_object(player, depth=2)

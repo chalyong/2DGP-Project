@@ -1,6 +1,7 @@
-from pico2d import get_time, load_image
+from pico2d import get_time, load_font, load_image
 
 import camera
+import game_state
 
 # frames inside mine_miner_mining.png (left, bottom, width, height)
 FRAMES = (
@@ -21,15 +22,21 @@ DRAW_HEIGHT = 96 * DRAW_HEIGHT_SCALE
 
 class Miner:
     image = None
+    font = None
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, ore_name):
         self.x = x
         self.y = y
+        self.ore_name = ore_name
         self.frame = 0
         self.frame_timer = 0.0
         self.last_update_time = get_time()
+        self.notification = None
+        self.notification_started = 0
         if Miner.image is None:
             Miner.image = load_image("assets/npc/mine_miner_mining.png")
+        if Miner.font is None:
+            Miner.font = load_font(r"C:\Windows\Fonts\consolab.ttf", 10)
         self.image = Miner.image
 
     def update(self):
@@ -40,6 +47,10 @@ class Miner:
         while self.frame_timer >= FRAME_DURATION:
             self.frame = (self.frame + 1) % len(FRAMES)
             self.frame_timer -= FRAME_DURATION
+            if self.frame == 0:
+                game_state.collected_items[self.ore_name] += 1
+                self.notification = f"{self.ore_name.upper()} * 1"
+                self.notification_started = current_time
 
     def draw(self):
         left, bottom, width, height = FRAMES[self.frame]
@@ -59,4 +70,28 @@ class Miner:
             py - camera.y,
             draw_width,
             draw_height,
+        )
+        self._draw_notification()
+
+    def _draw_notification(self):
+        if not self.notification:
+            return
+        elapsed = get_time() - self.notification_started
+        duration = 1.0
+        if elapsed >= duration:
+            self.notification = None
+            return
+        progress = elapsed / duration
+        rise = 18 * progress
+        start_color = (255, 239, 177)
+        end_color = (95, 95, 95)
+        color = tuple(
+            int(start + (end - start) * progress)
+            for start, end in zip(start_color, end_color)
+        )
+        Miner.font.draw(
+            self.x - camera.x - 24,
+            self.y + 62 - camera.y + rise,
+            self.notification,
+            color,
         )
