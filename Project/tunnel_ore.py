@@ -28,7 +28,7 @@ class TunnelOre:
             and abs(self.player.x - self.x) <= 100
             and not self.player.mining
         ):
-            amount = 1
+            amount = game_state.mining_yield(self.item_name)
             game_state.collected_items[self.item_name] += amount
             self.player.start_mining()
             self.notification = f"{self.item_name.upper()} * {amount}"
