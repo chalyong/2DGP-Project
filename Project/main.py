@@ -20,6 +20,15 @@ from inventory import Inventory
 running = True
 in_mine = False
 in_tunnel = False
+current_tunnel = None
+
+ENTRANCES = (
+    (486, "stone"),
+    (786, "coal"),
+    (1086, "iron"),
+    (1396, "gold"),
+)
+ENTRANCE_X = dict((ore_name, x) for x, ore_name in ENTRANCES)
 
 
 def handle_events():
@@ -54,10 +63,17 @@ def handle_events():
             and event.key == SDLK_SPACE
             and in_mine
             and not in_tunnel
-            and abs(player.x - 486) <= 50
-            and abs(player.y - 180) <= 80
         ):
-            enter_tunnel()
+            for x, ore_name in ENTRANCES:
+                if (
+                    game_state.open_tunnels[ore_name]
+                    and abs(player.x - x) <= 50
+                    and abs(player.y - 180) <= 80
+                ):
+                    enter_tunnel(ore_name)
+                    break
+            else:
+                game_world.handle_event(event)
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -113,13 +129,7 @@ def enter_mine():
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
     game_world.add_object(MineExit(64, 150), depth=1)
-    entrances = (
-        (486, "stone"),
-        (786, "coal"),
-        (1086, "iron"),
-        (1396, "gold"),
-    )
-    for x, ore_name in entrances:
+    for x, ore_name in ENTRANCES:
         game_world.add_object(
             MineEntrance(
                 x,
@@ -137,10 +147,11 @@ def enter_mine():
     camera.reset()
 
 
-def enter_tunnel():
-    global in_tunnel
+def enter_tunnel(ore_name):
+    global in_tunnel, current_tunnel
 
     in_tunnel = True
+    current_tunnel = ore_name
     game_world.clear()
     background.use_tunnel_map()
     player.x = 64
@@ -155,9 +166,9 @@ def enter_tunnel():
         TunnelOre(
             800,
             350,
-            "assets/ore/ore_stone.png",
+            f"assets/ore/ore_{ore_name}.png",
             player,
-            "stone",
+            ore_name,
         ),
         depth=1,
     )
@@ -167,8 +178,12 @@ def enter_tunnel():
 
 
 def leave_tunnel():
+    global current_tunnel
+
+    entrance_x = ENTRANCE_X[current_tunnel]
+    current_tunnel = None
     enter_mine()
-    player.x = 486
+    player.x = entrance_x
     player.y = 150
     camera.follow(player.x)
 
