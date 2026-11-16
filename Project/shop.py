@@ -1,5 +1,32 @@
 from pico2d import get_time, load_font, load_image
-from sdl2 import SDL_KEYDOWN, SDL_MOUSEWHEEL, SDLK_SPACE
+from sdl2 import SDL_KEYDOWN, SDL_MOUSEBUTTONDOWN, SDL_MOUSEWHEEL, SDLK_SPACE
+
+import camera
+import game_state
+
+
+# name, price, description, required ore (name, count) or None
+ITEM_PAGES = (
+    (
+        ("WOOD PICKAXE", 100, "stone+2", None),
+        ("STONE PICKAXE", 300, "stone+3, coal+2", ("stone", 10)),
+        ("IRON PICKAXE", 800, "stone+5, coal+3, iron+2", ("iron", 10)),
+    ),
+    (
+        ("GOLD PICKAXE", 1500, "stone+10, coal+5, iron+3, gold+2", ("gold", 10)),
+        ("STONE MINER", 1000, "stone miner+1", None),
+        ("COAL MINER", 2500, "coal miner+1", None),
+    ),
+    (
+        ("IRON MINER", 5000, "iron miner+1", None),
+        ("GOLD MINER", 10000, "gold miner+1", None),
+        ("COAL TUNNEL PASS", 500, "coal mine open", None),
+    ),
+    (
+        ("IRON TUNNEL PASS", 1200, "iron mine open", None),
+        ("GOLD TUNNEL PASS", 3000, "gold mine open", None),
+    ),
+)
 
 
 class Shop:
@@ -7,6 +34,7 @@ class Shop:
     title_font = None
     item_font = None
     description_font = None
+    ore_images = {}
 
     def __init__(self, player, merchant):
         self.player = player
@@ -14,6 +42,8 @@ class Shop:
         self.open = False
         self.page = 0
         self.page_change_time = -0.2
+        self.message = None
+        self.message_time = 0
         if Shop.panel is None:
             Shop.panel = load_image("assets/ui/shop_panel.png")
         if Shop.title_font is None:
@@ -22,6 +52,11 @@ class Shop:
             Shop.item_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 18)
         if Shop.description_font is None:
             Shop.description_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
+        if not Shop.ore_images:
+            for name in ("stone", "coal", "iron", "gold"):
+                Shop.ore_images[name] = load_image(
+                    f"assets/ore/ore_{name}.png"
+                )
 
     def handle_event(self, event):
         if (
@@ -46,9 +81,44 @@ class Shop:
             else:
                 return
             self.page_change_time = get_time()
+        elif (
+            event.type == SDL_MOUSEBUTTONDOWN
+            and self.open
+            and getattr(event, "button", 1) == 1
+        ):
+            y = camera.SCREEN_HEIGHT - event.y
+            for index, item in enumerate(ITEM_PAGES[self.page]):
+                item_y = 360 - index * 80
+                if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
+                    self._buy(item)
+                    break
+
+    def _buy(self, item):
+        name, price, description, requirement = item
+        tool = f"{name}"
+        if tool in game_state.tools:
+            self.message = "ALREADY OWNED"
+            self.message_time = get_time()
+            return
+        if game_state.money < price:
+            self.message = "NOT ENOUGH MONEY"
+            self.message_time = get_time()
+            return
+        if requirement:
+            ore, count = requirement
+            if game_state.collected_items[ore] < count:
+                self.message = f"NEED {ore.upper()} x{count}"
+                self.message_time = get_time()
+                return
+            game_state.collected_items[ore] -= count
+        game_state.money -= price
+        game_state.tools.append(tool)
+        self.message = f"PURCHASED {name}"
+        self.message_time = get_time()
 
     def update(self):
-        pass
+        if self.message and get_time() - self.message_time >= 1.5:
+            self.message = None
 
     def draw(self):
         if not self.open:
@@ -56,34 +126,22 @@ class Shop:
         self.panel.draw_to_origin(40, 100)
         title = f"MINING SHOP  {self.page + 1}/4"
         self.title_font.draw(260, 440, title, (255, 239, 177))
-        items = (
-            (
-                ("WOOD PICKAXE", "$ 100", "stone+2"),
-                ("STONE PICKAXE", "$ 300", "stone+3, coal+2"),
-                ("IRON PICKAXE", "$ 800", "stone+5, coal+3, iron+2"),
-            ),
-            (
-                ("GOLD PICKAXE", "$ 1,500", "stone+10, coal+5, iron+3, gold+2"),
-                ("STONE MINER", "$ 1,000", "stone miner+1"),
-                ("COAL MINER", "$ 2,500", "coal miner+1"),
-            ),
-            (
-                ("IRON MINER", "$ 5,000", "iron miner+1"),
-                ("GOLD MINER", "$ 10,000", "gold miner+1"),
-                ("COAL TUNNEL PASS", "$ 500", "coal mine open"),
-            ),
-            (
-                ("IRON TUNNEL PASS", "$ 1,200", "iron mine open"),
-                ("GOLD TUNNEL PASS", "$ 3,000", "gold mine open"),
-            ),
-        )[self.page]
-        for index, (name, price, description) in enumerate(items):
+        for index, (name, price, description, requirement) in enumerate(
+            ITEM_PAGES[self.page]
+        ):
             y = 360 - index * 80
             self.item_font.draw(100, y, name, (235, 235, 235))
-            self.item_font.draw(600, y, price, (255, 224, 120))
+            self.item_font.draw(600, y, f"$ {price:,}", (255, 224, 120))
+            if requirement:
+                ore, count = requirement
+                image = self.ore_images[ore]
+                image.draw(450, y + 6, 32, 32)
+                self.item_font.draw(480, y, f"x{count}", (255, 224, 120))
             if description:
                 self.description_font.draw(
                     100, y - 20, description, (180, 190, 205)
                 )
+        if self.message and get_time() - self.message_time < 1.5:
+            self.item_font.draw(300, 170, self.message, (255, 150, 120))
         self.item_font.draw(150, 130, "MOUSE WHEEL: CHANGE PAGE", (180, 190, 205))
         self.item_font.draw(480, 130, "SPACE: CLOSE", (180, 190, 205))
