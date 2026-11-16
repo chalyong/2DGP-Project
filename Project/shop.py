@@ -37,7 +37,7 @@ class Shop:
             and get_time() - self.page_change_time >= 0.2
         ):
             if event.y < 0:
-                self.page = min(self.page + 1, 1)
+                self.page = min(self.page + 1, 3)
             elif event.y > 0:
                 self.page = max(self.page - 1, 0)
             else:
@@ -51,7 +51,7 @@ class Shop:
         if not self.open:
             return
         self.panel.draw_to_origin(40, 100)
-        title = f"MINING SHOP  {self.page + 1}/2"
+        title = f"MINING SHOP  {self.page + 1}/4"
         self.title_font.draw(260, 440, title, (255, 239, 177))
         items = (
             (
@@ -63,6 +63,14 @@ class Shop:
                 ("COAL TUNNEL PASS", "$ 500"),
                 ("IRON TUNNEL PASS", "$ 1,200"),
                 ("GOLD TUNNEL PASS", "$ 3,000"),
+            ),
+            (
+                ("STONE MINE MINER", "()G"),
+                ("COAL MINE MINER", "()G"),
+                ("IRON MINE MINER", "()G"),
+            ),
+            (
+                ("GOLD MINE MINER", "()G"),
             ),
         )[self.page]
         for index, (name, price) in enumerate(items):

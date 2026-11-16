@@ -184,8 +184,6 @@ if __name__ == "__main__":
     open_canvas()
     reset_world()
     enter_mine()
-    enter_tunnel()
-    player.x = 800
     try:
         while running:
             handle_events()
