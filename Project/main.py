@@ -1,3 +1,9 @@
+import os
+
+# pico2d resolves asset paths relative to the current working directory.
+# Keep the game runnable from the repo root, VSCode, or the Project folder.
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, update_canvas
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
 
