@@ -12,10 +12,10 @@ ITEM_PAGES = (
     (
         ("WOOD PICKAXE", 100, "stone+2", None, "tool", None),
         ("STONE PICKAXE", 300, "stone+3, coal+2", ("stone", 10), "tool", None),
-        ("IRON PICKAXE", 800, "stone+5, coal+3, iron+2", ("iron", 10), "tool", None),
+        ("IRON PICKAXE", 800, "stone+5, coal+3, iron+2", ("coal", 10), "tool", None),
     ),
     (
-        ("GOLD PICKAXE", 1500, "stone+10, coal+5, iron+3, gold+2", ("gold", 10), "tool", None),
+        ("GOLD PICKAXE", 1500, "stone+10, coal+5, iron+3, gold+2", ("iron", 10), "tool", None),
         ("STONE MINER", 1000, "stone miner+1", None, "miner", "stone"),
         ("COAL MINER", 2500, "coal miner+1", None, "miner", "coal"),
     ),
