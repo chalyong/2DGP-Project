@@ -150,10 +150,13 @@ def enter_mine():
             ),
             depth=1,
         )
-    merchant = MineMerchant(300, 150)
+    merchant = MineMerchant(320, 150)
+    sell_merchant = MineMerchant(240, 150)
     game_world.add_object(merchant, depth=1)
+    game_world.add_object(sell_merchant, depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant), depth=8)
+    game_world.add_object(Shop(player, sell_merchant, mode="sell"), depth=8)
     game_world.add_object(Inventory(player), depth=8)
     camera.reset()
 
