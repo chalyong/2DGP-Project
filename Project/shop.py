@@ -197,6 +197,7 @@ class Shop:
             game_state.miners[target] += 1
         elif kind == "pass":
             game_state.open_tunnels[target] = True
+            game_state.passes.append(f"{target.upper()} TUNNEL PASS")
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 

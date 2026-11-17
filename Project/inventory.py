@@ -13,7 +13,9 @@ class Inventory:
     detail_font = None
     item_images = {}
 
-    TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS")
+    TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS", "PASSES")
+    TAB_START = 76
+    TAB_WIDTH = 128
 
     def __init__(self, player):
         self.player = player
@@ -50,8 +52,11 @@ class Inventory:
         ):
             x = event.x
             y = camera.SCREEN_HEIGHT - event.y
-            if 80 <= x < 720 and 390 <= y <= 450:
-                self.tab = min((x - 80) // 160, len(self.TABS) - 1)
+            if self.TAB_START <= x < self.TAB_START + len(self.TABS) * self.TAB_WIDTH and 390 <= y <= 450:
+                self.tab = min(
+                    (x - self.TAB_START) // self.TAB_WIDTH,
+                    len(self.TABS) - 1,
+                )
 
     def update(self):
         pass
@@ -64,9 +69,9 @@ class Inventory:
         self.title_font.draw(300, 455, "INVENTORY", (255, 239, 177))
 
         for index, name in enumerate(self.TABS):
-            left = 80 + index * 160
+            left = self.TAB_START + index * self.TAB_WIDTH
             color = (255, 224, 120) if index == self.tab else (180, 190, 205)
-            self.tab_font.draw(left + 28, 425, name, color)
+            self.tab_font.draw(left + 16, 425, name, color)
 
         if self.tab == 0:
             self._draw_assets()
@@ -74,8 +79,10 @@ class Inventory:
             self._draw_items(game_state.collected_items)
         elif self.tab == 2:
             self._draw_items(game_state.cooked_items)
-        else:
+        elif self.tab == 3:
             self._draw_tools()
+        else:
+            self._draw_passes()
 
         self.detail_font.draw(300, 135, "E: CLOSE", (180, 190, 205))
 
@@ -111,3 +118,12 @@ class Inventory:
 
         for index, tool in enumerate(game_state.tools):
             self.item_font.draw(120, 350 - index * 55, tool, (235, 235, 235))
+
+    def _draw_passes(self):
+        if not game_state.passes:
+            self.detail_font.draw(280, 290, "NO PASSES", (180, 190, 205))
+            return
+
+        for index, name in enumerate(game_state.passes):
+            y = 350 - index * 55
+            self.item_font.draw(120, y, name, (235, 235, 235))

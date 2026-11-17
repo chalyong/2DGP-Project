@@ -23,6 +23,7 @@ miners = {
     "iron": 0,
     "gold": 0,
 }
+passes = []
 
 PICKAXE_ORDER = (
     "WOOD PICKAXE",
