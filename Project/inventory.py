@@ -34,7 +34,7 @@ class Inventory:
         if not Inventory.item_images:
             for name in ("stone", "coal", "iron", "gold"):
                 Inventory.item_images[name] = load_image(
-                    f"assets/ore/ore_{name}.png"
+                    f"assets/item/ore_{name}.png"
                 )
 
     def handle_event(self, event):

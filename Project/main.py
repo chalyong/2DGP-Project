@@ -151,7 +151,7 @@ def enter_mine():
             MineEntrance(
                 x,
                 180,
-                f"assets/ore/ore_{ore_name}.png",
+                f"assets/item/ore_{ore_name}.png",
                 ore_name,
             ),
             depth=1,
@@ -186,7 +186,7 @@ def enter_tunnel(ore_name):
         TunnelOre(
             800,
             350,
-            f"assets/ore/ore_{ore_name}.png",
+            f"assets/item/ore_{ore_name}.png",
             player,
             ore_name,
         ),

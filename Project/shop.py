@@ -79,7 +79,7 @@ class Shop:
         if not Shop.ore_images:
             for name in ("stone", "coal", "iron", "gold"):
                 Shop.ore_images[name] = load_image(
-                    f"assets/ore/ore_{name}.png"
+                    f"assets/item/ore_{name}.png"
                 )
 
     def handle_event(self, event):
