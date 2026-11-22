@@ -14,14 +14,23 @@ import farm
 import ranch
 import auto_npc
 from background import Background
-from props import Building, FarmExit, FarmMerchant, MineExit, MineMerchant, TunnelExit
+from props import (
+    Building,
+    FarmExit,
+    FarmMerchant,
+    MineExit,
+    MineMerchant,
+    RanchExit,
+    RanchMerchant,
+    TunnelExit,
+)
 from mine_entrance import MineEntrance
 from tunnel_ore import TunnelOre
 from auto_npc import Miner
 from farm import FarmZone
 from player import Player
 from hud import Hud
-from shop import FARM_SHOP_PAGES, Shop
+from shop import FARM_SHOP_PAGES, RANCH_SHOP_PAGES, Shop
 from inventory import Inventory
 
 
@@ -305,7 +314,14 @@ def enter_ranch():
         player.stop_running()
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
+    game_world.add_object(RanchExit(*ranch.EXIT), depth=1)
+    merchant = RanchMerchant(*ranch.MERCHANT)
+    game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
+    game_world.add_object(
+        Shop(player, merchant, pages=RANCH_SHOP_PAGES, title="RANCH SHOP"),
+        depth=8,
+    )
     game_world.add_object(Inventory(player), depth=8)
 
 

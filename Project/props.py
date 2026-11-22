@@ -107,6 +107,70 @@ class MineMerchant:
         )
 
 
+class RanchExit:
+    image = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        if RanchExit.image is None:
+            RanchExit.image = load_image("assets/buildings/ranch_exit.png")
+
+    def update(self):
+        pass
+
+    def draw(self):
+        self.image.draw(self.x - camera.x, self.y - camera.y)
+
+
+# ranch_shopkeeper.png: 균일 4프레임 64x64 아이들 시트
+RANCH_MERCHANT_FRAMES = (
+    (0, 0, 64, 64),
+    (64, 0, 64, 64),
+    (128, 0, 64, 64),
+    (192, 0, 64, 64),
+)
+RANCH_MERCHANT_FRAME_DURATION = 0.25
+
+
+class RanchMerchant:
+    image = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.frame = 0
+        self.frame_timer = 0.0
+        self.last_update_time = get_time()
+        if RanchMerchant.image is None:
+            RanchMerchant.image = load_image("assets/npc/ranch_shopkeeper.png")
+        self.image = RanchMerchant.image
+
+    def update(self):
+        current_time = get_time()
+        delta_time = max(0.0, current_time - self.last_update_time)
+        self.last_update_time = current_time
+        self.frame_timer += delta_time
+        while self.frame_timer >= RANCH_MERCHANT_FRAME_DURATION:
+            self.frame = (self.frame + 1) % len(RANCH_MERCHANT_FRAMES)
+            self.frame_timer -= RANCH_MERCHANT_FRAME_DURATION
+
+    def draw(self):
+        left, bottom, width, height = RANCH_MERCHANT_FRAMES[self.frame]
+        self.image.clip_composite_draw(
+            left,
+            bottom,
+            width,
+            height,
+            0,
+            "",
+            self.x - camera.x,
+            self.y - camera.y,
+            width,
+            height,
+        )
+
+
 # farm_merchant_idle.png 4프레임 아이들 시트 (left, bottom, width, height)
 FARM_MERCHANT_FRAMES = (
     (0, 0, 161, 230),

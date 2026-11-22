@@ -32,6 +32,8 @@ SELL_PAGES = (
 )
 
 # ?띿궗吏 ?곸젏 ?곹뭹 (F4?먯꽌 ??ぉ???쒖감 異붽?)
+RANCH_SHOP_PAGES = []
+
 FARM_SHOP_PAGES = [
     (
         ("STONE HOE", 200, "wheat+2", ("stone", 10), "farm_tool", None),
