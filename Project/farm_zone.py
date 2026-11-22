@@ -41,16 +41,18 @@ class FarmZone:
         key = (self.crop, index)
         now = get_time()
         slot = game_state.crop_slots.get(key)
+        stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
         if slot is None:
             game_state.crop_slots[key] = {
                 "planted_at": now,
                 "harvested_at": None,
             }
             return
-        if farm.crop_stage(slot, now) == farm.READY_STAGE:
-            game_state.collected_items[self.crop] += 1
+        if farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
+            amount = game_state.harvest_yield()
+            game_state.collected_items[self.crop] += amount
             slot["harvested_at"] = now
-            self.notification = f"{self.crop.upper()} * 1"
+            self.notification = f"{self.crop.upper()} * {amount}"
             self.notification_started = now
 
     def update(self):
@@ -104,10 +106,11 @@ class FarmZone:
 
     def _draw_crops(self):
         now = get_time()
+        stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
         for (crop, index), slot in game_state.crop_slots.items():
             if crop != self.crop:
                 continue
-            stage = farm.crop_stage(slot, now)
+            stage = farm.crop_stage(slot, now, stage_seconds)
             if stage is None:
                 continue
             x0, y0, x1, y1 = farm.cell_rect(crop, index)
