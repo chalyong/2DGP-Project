@@ -1,5 +1,12 @@
 from pico2d import get_time, load_image
-from sdl2 import SDL_KEYDOWN, SDL_KEYUP, SDLK_LEFT, SDLK_RIGHT
+from sdl2 import (
+    SDL_KEYDOWN,
+    SDL_KEYUP,
+    SDLK_DOWN,
+    SDLK_LEFT,
+    SDLK_RIGHT,
+    SDLK_UP,
+)
 from transitions import Machine
 
 import camera
@@ -41,6 +48,7 @@ class Player:
         self.direction = "right"
         self.pressed_keys = set()
         self.movement_locked = False
+        self.top_view = False
         if Player.idle_image is None:
             Player.idle_image = load_image("assets/player/player_idle_right.png")
         if Player.run_image is None:
@@ -71,12 +79,20 @@ class Player:
             self._update_state()
             return
 
-        if event.type == SDL_KEYDOWN and event.key in (SDLK_LEFT, SDLK_RIGHT):
-            self.pressed_keys.add(event.key)
-        elif event.type == SDL_KEYUP and event.key in (SDLK_LEFT, SDLK_RIGHT):
-            self.pressed_keys.discard(event.key)
+        if event.type == SDL_KEYDOWN:
+            if event.key in self._move_keys():
+                self.pressed_keys.add(event.key)
+        elif event.type == SDL_KEYUP:
+            if event.key in self._move_keys():
+                self.pressed_keys.discard(event.key)
 
         self._update_state()
+
+    def _move_keys(self):
+        keys = (SDLK_LEFT, SDLK_RIGHT)
+        if self.top_view:
+            keys += (SDLK_UP, SDLK_DOWN)
+        return keys
 
     def start_mining(self):
         if self.mining:
@@ -125,6 +141,13 @@ class Player:
                     camera.WORLD_WIDTH - 32, self.x + self.speed * delta_time
                 )
                 self.direction = "right"
+            if self.top_view:
+                if SDLK_UP in self.pressed_keys:
+                    self.y = min(
+                        camera.WORLD_HEIGHT - 32, self.y + self.speed * delta_time
+                    )
+                elif SDLK_DOWN in self.pressed_keys:
+                    self.y = max(32, self.y - self.speed * delta_time)
 
         self.frame_timer += delta_time
         frame_duration = (

@@ -236,6 +236,7 @@ def enter_farm():
     camera.reset()
     camera.set_world(FARM_SIZE, FARM_SIZE)
     background.use_farm_map()
+    player.top_view = True
     player.x = FARM_EXIT[0]
     player.y = FARM_EXIT[1] - 70
     player.pressed_keys.clear()
