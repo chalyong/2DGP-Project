@@ -124,11 +124,18 @@ def handle_events():
 
 def update_world():
     game_state.update_miner_income()
+    previous_position = (player.x, player.y)
     game_world.update()
+    if in_farm and _sprinkler_blocked(player.x, player.y):
+        player.x, player.y = previous_position
     if in_farm:
         camera.follow_2d(player.x, player.y)
     else:
         camera.follow(player.x)
+
+
+def _sprinkler_blocked(x, y):
+    return any(farm.is_sprinkler_hit(crop, x, y) for crop in farm.ZONES)
 
 
 def reset_world():
