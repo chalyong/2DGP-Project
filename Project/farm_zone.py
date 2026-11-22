@@ -1,4 +1,4 @@
-from pico2d import get_time, load_image
+from pico2d import get_time, load_font, load_image
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 
 import camera
@@ -11,14 +11,19 @@ class FarmZone:
     locked_image = None
     sprinkler_image = None
     crop_images = {}
+    font = None
 
     def __init__(self, crop, player):
         self.crop = crop
         self.player = player
+        self.notification = None
+        self.notification_started = 0
         if FarmZone.plow_image is None:
             FarmZone.plow_image = load_image("assets/farm_tile/plow.png")
             FarmZone.locked_image = load_image("assets/farm_tile/locked_plow.png")
             FarmZone.sprinkler_image = load_image("assets/farm_tile/sprinkler.png")
+        if FarmZone.font is None:
+            FarmZone.font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
         if crop not in FarmZone.crop_images:
             FarmZone.crop_images[crop] = load_image(
                 f"assets/farm_tile/crop_{crop}.png"
@@ -45,6 +50,8 @@ class FarmZone:
         if farm.crop_stage(slot, now) == farm.READY_STAGE:
             game_state.collected_items[self.crop] += 1
             slot["harvested_at"] = now
+            self.notification = f"{self.crop.upper()} * 1"
+            self.notification_started = now
 
     def update(self):
         pass
@@ -69,6 +76,30 @@ class FarmZone:
             (y0 + y1) / 2 - camera.y,
             54,
             70,
+        )
+        self._draw_notification()
+
+    def _draw_notification(self):
+        if not self.notification:
+            return
+        elapsed = get_time() - self.notification_started
+        duration = 1.0
+        if elapsed >= duration:
+            self.notification = None
+            return
+        progress = elapsed / duration
+        rise = 30 * progress
+        start_color = (255, 239, 177)
+        end_color = (95, 95, 95)
+        color = tuple(
+            int(start + (end - start) * progress)
+            for start, end in zip(start_color, end_color)
+        )
+        FarmZone.font.draw(
+            self.player.x - camera.x - 30,
+            self.player.y - camera.y + 45 + rise,
+            self.notification,
+            color,
         )
 
     def _draw_crops(self):
