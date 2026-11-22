@@ -17,7 +17,7 @@ from props import Building, FarmExit, FarmMerchant, MineExit, MineMerchant, Tunn
 from mine_entrance import MineEntrance
 from tunnel_ore import TunnelOre
 from miner import Miner
-from farm_zone import FarmZone
+from farm import FarmZone
 from player import Player
 from hud import Hud
 from shop import FARM_SHOP_PAGES, Shop
