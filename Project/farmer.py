@@ -76,11 +76,17 @@ def update():
             and not _cell_busy(f["crop"], index, f)
         ):
             slot = game_state.crop_slots.get((f["crop"], index))
-            if slot is None:
+            stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
+            stage = (
+                farm.crop_stage(slot, now, stage_seconds)
+                if slot is not None
+                else None
+            )
+            if stage is None:
+                #빈 칸이거나 수확 직후 재성장 대기 칸 → 다시 심는다
                 _start_motion(f, now, ("plant", index))
                 continue
-            stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
-            if farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
+            if stage == farm.READY_STAGE:
                 _start_motion(f, now, ("harvest", index))
                 continue
         dx = f["tx"] - f["x"]
@@ -133,8 +139,12 @@ def _apply_action(f, now):
         )
         slot["harvested_at"] = now
     else:
-        if key in game_state.crop_slots:
-            return
+        slot = game_state.crop_slots.get(key)
+        if slot is not None:
+            stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
+            if farm.crop_stage(slot, now, stage_seconds) is not None:
+                # 모션 중 다른 농부가 심거나 재성장이 끝난 칸은 건너뛴다
+                return
         game_state.crop_slots[key] = {
             "planted_at": now,
             "harvested_at": None,
