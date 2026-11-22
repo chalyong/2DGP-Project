@@ -176,7 +176,8 @@ class RanchMerchant:
 class Breeder:
     image = None
 
-    def __init__(self, x, y):
+    def __init__(self, animal, x, y):
+        self.animal = animal
         self.x = x
         self.y = y
         self.frame = 0
@@ -187,7 +188,7 @@ class Breeder:
         self.image = Breeder.image
 
     def update(self):
-        if not game_state.breeder_owned:
+        if not game_state.breeders.get(self.animal):
             return
         current_time = get_time()
         delta_time = max(0.0, current_time - self.last_update_time)
@@ -198,7 +199,7 @@ class Breeder:
             self.frame_timer -= 0.25
 
     def draw(self):
-        if not game_state.breeder_owned:
+        if not game_state.breeders.get(self.animal):
             return
         self.image.clip_composite_draw(
             self.frame * 64,

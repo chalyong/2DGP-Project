@@ -249,11 +249,11 @@ def _random_spot(crop):
 animals = []
 # --- 목장 관리인 (구역 자동 수확 — 목장_PRD 3.6) ---
 
-MAX_MANAGERS = 3  # 구역당 최대 (목장_PRD 3.7)
+MAX_MANAGERS = 1  # 구역당 최대 (목장_PRD 3.7)
 MANAGER_INTERVAL = 5.0  # 자동 수확 주기(초)
 BREEDER_INTERVAL = 60.0  # 교배 주기(초 — 목장_PRD 3.7)
 manager_states = []
-breeder_timer = 0.0
+breeder_timers = {"chicken": 0.0, "cow": 0.0, "pig": 0.0}  # 구역별 교배 주기
 _breeder_last = get_time()
 
 
@@ -311,7 +311,7 @@ def at_manager_limit(animal):
 
 
 def hire_manager(animal):
-    """구역 관리인 고용. 구역당 3명 초과 시 False."""
+    """구역 관리인 고용. 구역당 1명 초과 시 False."""
     if at_manager_limit(animal):
         return False
     x, y = _random_animal_spot(animal)
@@ -350,18 +350,19 @@ def _apply_manager_collect(m, now):
 
 
 def _update_breeder(now):
-    """교배 전문가: 2마리 이상인 종마다 주기마다 +1 (상한 준수)."""
-    global breeder_timer, _breeder_last
+    """교배 전문가: 구역별 1명, 담당 구역 동물만 주기마다 +1 (상한 준수)."""
+    global _breeder_last
     delta = max(0.0, now - _breeder_last)
     _breeder_last = now
-    if not game_state.breeder_owned:
-        breeder_timer = 0.0
-        return
-    breeder_timer += delta
-    if breeder_timer < BREEDER_INTERVAL:
-        return
-    breeder_timer = 0.0
-    for animal, count in game_state.animal_counts.items():
+    for animal in ranch.ANIMAL_ORDER:
+        if not game_state.breeders.get(animal):
+            breeder_timers[animal] = 0.0
+            continue
+        breeder_timers[animal] += delta
+        if breeder_timers[animal] < BREEDER_INTERVAL:
+            continue
+        breeder_timers[animal] = 0.0
+        count = game_state.animal_counts[animal]
         if 2 <= count < game_state.ANIMAL_LIMIT_PER_ZONE:
             game_state.animal_counts[animal] += 1
 

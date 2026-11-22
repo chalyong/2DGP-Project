@@ -56,12 +56,16 @@ RANCH_SHOP_PAGES = [
     ),
     (
         ("HUNTING KNIFE", 150, "hunt: meat x min(knife, animal)", None, "knife", None),
-        ("CHICKEN MANAGER", 500, "auto collect (max 3)", None, "manager", "chicken"),
-        ("COW MANAGER", 800, "auto collect (max 3)", None, "manager", "cow"),
+        ("CHICKEN MANAGER", 500, "auto collect (max 1)", None, "manager", "chicken"),
+        ("COW MANAGER", 800, "auto collect (max 1)", None, "manager", "cow"),
     ),
     (
-        ("PIG MANAGER", 1200, "auto collect (max 3)", None, "manager", "pig"),
-        ("BREEDER", 1000, "breed +1 / 60s (max 1)", None, "breeder", None),
+        ("PIG MANAGER", 1200, "auto collect (max 1)", None, "manager", "pig"),
+        ("CHICKEN BREEDER", 1000, "breed +1 / 60s (max 1)", None, "breeder", "chicken"),
+        ("COW BREEDER", 1000, "breed +1 / 60s (max 1)", None, "breeder", "cow"),
+    ),
+    (
+        ("PIG BREEDER", 1000, "breed +1 / 60s (max 1)", None, "breeder", "pig"),
     ),
 ]
 
@@ -150,7 +154,7 @@ ITEM_PAGES = (
 # ?곹뭹紐?-> ?ㅻ챸 (?몃깽?좊━ ???ㅻⅨ ?붾㈃?먯꽌 ?ъ궗??
 ITEM_DESCRIPTIONS = {
     item[0]: item[2]
-    for pages in (ITEM_PAGES, FARM_SHOP_PAGES)
+    for pages in (ITEM_PAGES, FARM_SHOP_PAGES, RANCH_SHOP_PAGES)
     for page in pages
     for item in page
 }
@@ -182,7 +186,7 @@ def item_image(name):
         return "assets/item/hunting_knife.png", None
     if upper.endswith("MANAGER"):
         return "assets/npc/ranch_manager_idle.png", (0, 0, 64, 64)
-    if upper == "BREEDER":
+    if upper.endswith("BREEDER"):
         return "assets/npc/breeder_idle.png", (0, 0, 64, 64)
     if upper in ("CHICKEN", "COW", "PIG"):
         # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
@@ -410,8 +414,8 @@ class Shop:
                 self.message_time = get_time()
                 return
         if kind == "breeder":
-            if game_state.breeder_owned:
-                self.message = "ALREADY OWNED"
+            if game_state.breeders.get(target):
+                self.message = f"{target.upper()} BREEDER LIMIT (1)"
                 self.message_time = get_time()
                 return
         if game_state.money < price:
@@ -448,7 +452,7 @@ class Shop:
         elif kind == "manager":
             auto_npc.hire_manager(target)
         elif kind == "breeder":
-            game_state.breeder_owned = True
+            game_state.breeders[target] = True
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -568,6 +572,14 @@ class Shop:
                     y,
                     f"{owned}/{auto_npc.MAX_MANAGERS}",
                     count_color,
+                )
+            if kind == "breeder":
+                owned = 1 if game_state.breeders.get(target) else 0
+                count_color = (
+                    (255, 224, 120) if owned < 1 else (255, 150, 120)
+                )
+                self.item_font.draw(
+                    450, y, f"{owned}/1", count_color
                 )
             if description:
                 self.description_font.draw(

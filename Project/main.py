@@ -335,7 +335,9 @@ def enter_ranch():
     game_world.add_object(merchant, depth=1)
     for animal in ranch.ZONES:
         game_world.add_object(ranch.RanchZone(animal, player), depth=1)
-    game_world.add_object(Breeder(*ranch.BREEDER_POSITION), depth=1)
+        game_world.add_object(
+            Breeder(animal, *ranch.breeder_position(animal)), depth=1
+        )
     game_world.add_object(player, depth=2)
     game_world.add_object(
         Shop(player, merchant, pages=RANCH_SHOP_PAGES, title="RANCH SHOP"),
