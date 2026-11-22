@@ -27,6 +27,9 @@ SELL_PAGES = (
     ("gold",),
 )
 
+# 농사지 상점 상품 (F4에서 항목을 순차 추가)
+FARM_SHOP_PAGES = []
+
 # name, price, description, required ore (name, count) or None, kind, kind target
 ITEM_PAGES = (
     (
@@ -58,11 +61,12 @@ class Shop:
     description_font = None
     ore_images = {}
 
-    def __init__(self, player, merchant, mode="buy", pages=None):
+    def __init__(self, player, merchant, mode="buy", pages=None, title="MINING SHOP"):
         self.player = player
         self.merchant = merchant
         self.mode = mode
         self.pages = ITEM_PAGES if pages is None else pages
+        self.title = title
         self.open = False
         self.page = 0
         self.page_change_time = -0.2
@@ -254,7 +258,7 @@ class Shop:
 
     def _draw_buy_page(self):
         page_count = len(self.pages)
-        title = f"MINING SHOP  {self.page + 1}/{max(page_count, 1)}"
+        title = f"{self.title}  {self.page + 1}/{max(page_count, 1)}"
         self.title_font.draw(260, 440, title, (255, 239, 177))
         items = self.pages[self.page] if self.page < page_count else ()
         for index, (name, price, description, requirement, kind, target) in enumerate(

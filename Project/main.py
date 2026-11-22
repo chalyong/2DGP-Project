@@ -24,7 +24,7 @@ from farm_merchant import FarmMerchant
 from farm_zone import FarmZone
 from player import Player
 from hud import Hud
-from shop import Shop
+from shop import FARM_SHOP_PAGES, Shop
 from inventory import Inventory
 
 
@@ -257,7 +257,10 @@ def enter_farm():
     for crop in farm.ZONES:
         game_world.add_object(FarmZone(crop, player), depth=1)
     game_world.add_object(player, depth=2)
-    game_world.add_object(Shop(player, merchant, pages=()), depth=8)
+    game_world.add_object(
+        Shop(player, merchant, pages=FARM_SHOP_PAGES, title="FARM SHOP"),
+        depth=8,
+    )
     game_world.add_object(Inventory(player), depth=8)
 
 
