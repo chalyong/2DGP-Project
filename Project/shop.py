@@ -112,6 +112,8 @@ CROP_ITEM_ASSETS = {
     if os.path.exists(f"assets/item/{name}.png")
 }
 _icon_cache = {}
+ICON_WIDTH = 42
+ICON_MAX_HEIGHT = 60  # 세로로 긴 아이콘(광부 등)의 최대 높이
 
 
 def item_image(name):
@@ -144,8 +146,12 @@ def item_image(name):
     return None, None
 
 
-def draw_item_icon(name, x, y, size=42):
-    """상품/아이템 아이콘을 (x, y) 중앙에 그린다."""
+def draw_item_icon(name, x, y, size=ICON_WIDTH):
+    """상품/아이템 아이콘을 (x, y) 중앙에 원본 비율 유지로 그린다.
+
+    가로는 size, 세로는 ICON_MAX_HEIGHT 안에서 원본 종횡비를 맞춘다.
+    (정사각 아이콘은 그대로 sizexsize, 세로로 긴 광부는 세로를 길게)
+    """
     path, clip = item_image(name)
     if path is None:
         return False
@@ -154,9 +160,16 @@ def draw_item_icon(name, x, y, size=42):
         image = load_image(path)
         _icon_cache[path] = image
     if clip is None:
-        image.draw(x, y, size, size)
+        source_width, source_height = image.w, image.h
     else:
-        image.clip_composite_draw(*clip, 0, "", x, y, size, size)
+        source_width, source_height = clip[2], clip[3]
+    scale = min(size / source_width, ICON_MAX_HEIGHT / source_height)
+    draw_width = source_width * scale
+    draw_height = source_height * scale
+    if clip is None:
+        image.draw(x, y, draw_width, draw_height)
+    else:
+        image.clip_composite_draw(*clip, 0, "", x, y, draw_width, draw_height)
     return True
 
 
