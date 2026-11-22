@@ -11,6 +11,7 @@ import game_world
 import game_state
 import camera
 import farm
+import farmer
 from background import Background
 from building import Building
 from mine_entrance import MineEntrance
@@ -124,6 +125,7 @@ def handle_events():
 
 def update_world():
     game_state.update_miner_income()
+    farmer.update()
     previous_position = (player.x, player.y)
     game_world.update()
     if in_farm and _sprinkler_blocked(player.x, player.y):

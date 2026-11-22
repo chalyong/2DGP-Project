@@ -17,6 +17,7 @@ class FarmZone:
     font = None
     farmer_idle = None
     farmer_walk = None
+    farmer_harvest = None
 
     def __init__(self, crop, player):
         self.crop = crop
@@ -32,6 +33,7 @@ class FarmZone:
         if FarmZone.farmer_idle is None:
             FarmZone.farmer_idle = load_image("assets/npc/farmer_idle.png")
             FarmZone.farmer_walk = load_image("assets/npc/farmer_walk_right.png")
+            FarmZone.farmer_harvest = load_image("assets/npc/farmer_harvest.png")
         if crop not in FarmZone.crop_images:
             FarmZone.crop_images[crop] = load_image(
                 f"assets/farm_tile/crop_{crop}.png"
@@ -101,7 +103,12 @@ class FarmZone:
             while f["frame_timer"] >= FARMER_FRAME_DURATION:
                 f["frame"] = (f["frame"] + 1) % 4
                 f["frame_timer"] -= FARMER_FRAME_DURATION
-            image = FarmZone.farmer_walk if f["moving"] else FarmZone.farmer_idle
+            if now < f.get("harvest_until", 0.0):
+                image = FarmZone.farmer_harvest
+            elif f["moving"]:
+                image = FarmZone.farmer_walk
+            else:
+                image = FarmZone.farmer_idle
             flip = "h" if f["facing"] == "left" else ""
             image.clip_composite_draw(
                 f["frame"] * 64,
