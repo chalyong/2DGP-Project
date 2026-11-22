@@ -39,6 +39,9 @@ RANCH_SHOP_PAGES = [
         ("COW", 900, "cow +1 (max 10)", None, "ranch_animal", "cow"),
         ("PIG", 1500, "pig +1 (max 10)", None, "ranch_animal", "pig"),
     ),
+    (
+        ("HUNTING KNIFE", 150, "1 hunt: meat +1", None, "knife", None),
+    ),
 ]
 
 FARM_SHOP_PAGES = [
@@ -134,6 +137,8 @@ def item_image(name):
         return "assets/item/hoe.png", None
     if upper == "FERTILIZER":
         return "assets/item/fertilizer.png", None
+    if upper == "HUNTING KNIFE":
+        return "assets/item/hunting_knife.png", None
     if upper in ("CHICKEN", "COW", "PIG"):
         # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
         return f"assets/npc/animal_{upper.lower()}.png", (0, 0, 64, 64)
@@ -389,6 +394,8 @@ class Shop:
         elif kind == "ranch_animal":
             # 동물 상태는 auto_npc의 ensure_animal_population이 다음 틱에 배치한다
             game_state.animal_counts[target] += 1
+        elif kind == "knife":
+            game_state.hunting_knives += 1
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -490,6 +497,10 @@ class Shop:
                     y,
                     f"{owned}/{MAX_ANIMALS_PER_ZONE}",
                     count_color,
+                )
+            if kind == "knife":
+                self.item_font.draw(
+                    450, y, f"x {game_state.hunting_knives}", (255, 224, 120)
                 )
             if description:
                 self.description_font.draw(
