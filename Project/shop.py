@@ -9,6 +9,8 @@ from sdl2 import (
     SDLK_SPACE,
 )
 
+import os
+
 import camera
 import game_state
 import farmer
@@ -103,6 +105,12 @@ ITEM_DESCRIPTIONS = {
 # 크롭 시트의 ready 프레임 / 농부 idle 첫 프레임
 CROP_READY_CLIP = (3 * 48, 0, 48, 48)
 FARMER_IDLE_CLIP = (0, 0, 64, 64)
+# 인벤토리 작물용 item 에셋 (생성되지 않은 작물은 farm_tile 크롭 시트로 대체)
+CROP_ITEM_ASSETS = {
+    name: f"assets/item/{name}.png"
+    for name in ("wheat", "potato", "strawberry")
+    if os.path.exists(f"assets/item/{name}.png")
+}
 _icon_cache = {}
 
 
@@ -120,11 +128,15 @@ def item_image(name):
         return f"assets/item/ore_{ore}.png", None
     if "UNLOCK" in upper:
         crop = upper.split()[0].lower()
+        if crop in CROP_ITEM_ASSETS:
+            return CROP_ITEM_ASSETS[crop], None
         return f"assets/farm_tile/crop_{crop}.png", CROP_READY_CLIP
     if "MINER" in upper:
         return "assets/npc/mine_miner_mining.png", miner.FRAMES[0]
     if "FARMER" in upper:
         return "assets/npc/farmer_idle.png", FARMER_IDLE_CLIP
+    if upper.lower() in CROP_ITEM_ASSETS:
+        return CROP_ITEM_ASSETS[upper.lower()], None
     if upper in ("WHEAT", "POTATO", "STRAWBERRY"):
         return f"assets/farm_tile/crop_{upper.lower()}.png", CROP_READY_CLIP
     if upper in ("STONE", "COAL", "IRON", "GOLD"):
