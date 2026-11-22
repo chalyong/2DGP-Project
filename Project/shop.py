@@ -31,9 +31,16 @@ SELL_PAGES = (
 # 농사지 상점 상품 (F4에서 항목을 순차 추가)
 FARM_SHOP_PAGES = [
     (
-        ("STONE HOE", 200, "harvest +1", ("stone", 10), "farm_tool", None),
-        ("IRON HOE", 600, "harvest +2", ("iron", 10), "farm_tool", None),
-        ("GOLD HOE", 1500, "harvest +4", ("gold", 10), "farm_tool", None),
+        ("STONE HOE", 200, "wheat+2", ("stone", 10), "farm_tool", None),
+        ("IRON HOE", 600, "wheat+3, potato+2", ("iron", 10), "farm_tool", None),
+        (
+            "GOLD HOE",
+            1500,
+            "wheat+5, potato+3, strawberry+2",
+            ("gold", 10),
+            "farm_tool",
+            None,
+        ),
     ),
     (
         ("FERTILIZER", 300, "growth time -50%", None, "farm_tool", None),

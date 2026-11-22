@@ -10,8 +10,8 @@ import game_state
 from player import WALK_SPEED_PIXELS_PER_SECOND
 
 MAX_PER_ZONE = 3
-SPEED_RATIO = 1.0  # 플레이어 속도 대비 배율 (동물은 0.5)
-HARVEST_POSE_SECONDS = 0.5
+SPEED_RATIO = 0.5  # 플레이어 속도의 절반 (동물도 동일 배율)
+HARVEST_POSE_SECONDS = 5.0  # 수확 동작 전체 시간 (스프라이트 4프레임과 동일)
 
 states = []
 
@@ -104,9 +104,12 @@ def _try_harvest(f, now):
     stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
     if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
         return
-    game_state.collected_items[f["crop"]] += game_state.harvest_yield()
+    game_state.collected_items[f["crop"]] += game_state.harvest_yield(f["crop"])
     slot["harvested_at"] = now
     f["harvest_until"] = now + HARVEST_POSE_SECONDS
+    # 수확 스프라이트를 프레임 0부터 재생
+    f["frame"] = 0
+    f["frame_timer"] = 0.0
 
 
 def _random_spot(crop):
