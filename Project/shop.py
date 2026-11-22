@@ -11,6 +11,7 @@ from sdl2 import (
 
 import camera
 import game_state
+import farmer
 
 
 MAX_MINERS_PER_ZONE = 10
@@ -43,6 +44,18 @@ FARM_SHOP_PAGES = [
             "strawberry zone open",
             None,
             "farm_unlock",
+            "strawberry",
+        ),
+    ),
+    (
+        ("WHEAT FARMER", 500, "wheat auto harvest", None, "farmer", "wheat"),
+        ("POTATO FARMER", 800, "potato auto harvest", None, "farmer", "potato"),
+        (
+            "STRAWBERRY FARMER",
+            1200,
+            "strawberry auto harvest",
+            None,
+            "farmer",
             "strawberry",
         ),
     ),
@@ -231,6 +244,17 @@ class Shop:
                 self.message = "UNLOCK POTATO FIRST"
                 self.message_time = get_time()
                 return
+        if kind == "farmer":
+            if not game_state.farm_unlocked[target]:
+                self.message = f"UNLOCK {target.upper()} ZONE FIRST"
+                self.message_time = get_time()
+                return
+            if farmer.at_limit(target):
+                self.message = (
+                    f"{target.upper()} FARMER LIMIT ({farmer.MAX_PER_ZONE})"
+                )
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -254,6 +278,8 @@ class Shop:
             game_state.farm_tools.append(name)
         elif kind == "farm_unlock":
             game_state.farm_unlocked[target] = True
+        elif kind == "farmer":
+            farmer.hire(target)
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
