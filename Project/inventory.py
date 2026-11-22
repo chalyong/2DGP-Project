@@ -8,6 +8,7 @@ from sdl2 import (
 
 import camera
 import game_state
+import shop
 
 
 class Inventory:
@@ -16,12 +17,17 @@ class Inventory:
     tab_font = None
     item_font = None
     detail_font = None
+    description_font = None
     item_images = {}
 
     TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS", "PASSES")
     TAB_START = 76
     TAB_WIDTH = 128
     ITEMS_PER_PAGE = 3
+    # 상점 행 레이아웃 기준 (첫 행 y=360, 행 간격 80, 설명은 이름 아래 20px)
+    ROW_Y0 = 360
+    ROW_SPACING = 80
+    PRICE_X = 600
 
     def __init__(self, player):
         self.player = player
@@ -39,6 +45,8 @@ class Inventory:
             Inventory.item_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 20)
         if Inventory.detail_font is None:
             Inventory.detail_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 16)
+        if Inventory.description_font is None:
+            Inventory.description_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
         if not Inventory.item_images:
             for name in ("stone", "coal", "iron", "gold"):
                 Inventory.item_images[name] = load_image(
@@ -133,11 +141,11 @@ class Inventory:
         else:
             self._draw_passes()
 
-        self.detail_font.draw(300, 135, "E: CLOSE", (180, 190, 205))
+        self.detail_font.draw(300, 130, "E: CLOSE", (180, 190, 205))
         if self.tab != 0 and self._page_count() > 1:
             self.detail_font.draw(
                 640,
-                135,
+                130,
                 f"{self.page + 1}/{self._page_count()}",
                 (180, 190, 205),
             )
@@ -145,10 +153,15 @@ class Inventory:
     def _draw_assets(self):
         elapsed = max(0, int(get_time() - game_state.play_start_time))
         minutes, seconds = divmod(elapsed, 60)
-        self.item_font.draw(110, 350, f"MONEY   $ {game_state.money:,}", (235, 235, 235))
         self.item_font.draw(
             110,
-            295,
+            self.ROW_Y0,
+            f"MONEY   $ {game_state.money:,}",
+            (235, 235, 235),
+        )
+        self.item_font.draw(
+            110,
+            self.ROW_Y0 - self.ROW_SPACING,
             f"PLAY TIME   {minutes:02d}:{seconds:02d}",
             (235, 235, 235),
         )
@@ -160,12 +173,17 @@ class Inventory:
             return
 
         for index, (name, count) in enumerate(self._page_slice(all_items)):
-            y = 350 - index * 65
+            y = self.ROW_Y0 - index * self.ROW_SPACING
             image = self.item_images.get(name)
             if image is not None:
                 image.draw(120, y, 42, 42)
             self.item_font.draw(165, y - 6, name.upper(), (235, 235, 235))
-            self.item_font.draw(570, y - 6, f"x {count}", (255, 224, 120))
+            self.item_font.draw(
+                self.PRICE_X,
+                y - 6,
+                f"x {count}",
+                (255, 224, 120),
+            )
 
     def _draw_tools(self):
         # 광산 도구(곡괭이) + 농사지 도구(낫 곡괭이·비료)
@@ -175,7 +193,13 @@ class Inventory:
             return
 
         for index, tool in enumerate(self._page_slice(tools)):
-            self.item_font.draw(120, 350 - index * 55, tool, (235, 235, 235))
+            y = self.ROW_Y0 - index * self.ROW_SPACING
+            self.item_font.draw(100, y, tool, (235, 235, 235))
+            description = shop.ITEM_DESCRIPTIONS.get(tool, "")
+            if description:
+                self.description_font.draw(
+                    100, y - 20, description, (180, 190, 205)
+                )
 
     def _draw_passes(self):
         if not game_state.passes:
@@ -183,5 +207,5 @@ class Inventory:
             return
 
         for index, name in enumerate(self._page_slice(game_state.passes)):
-            y = 350 - index * 55
-            self.item_font.draw(120, y, name, (235, 235, 235))
+            y = self.ROW_Y0 - index * self.ROW_SPACING
+            self.item_font.draw(100, y, name, (235, 235, 235))

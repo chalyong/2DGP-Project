@@ -91,6 +91,14 @@ ITEM_PAGES = (
     ),
 )
 
+# 상품명 -> 설명 (인벤토리 등 다른 화면에서 재사용)
+ITEM_DESCRIPTIONS = {
+    item[0]: item[2]
+    for pages in (ITEM_PAGES, FARM_SHOP_PAGES)
+    for page in pages
+    for item in page
+}
+
 
 class Shop:
     panel = None
