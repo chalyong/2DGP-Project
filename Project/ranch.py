@@ -1,7 +1,8 @@
 # 목장 레이아웃과 동물 구역 (목장_PRD 3.1 / 3.2)
 # 좌표는 pico2d 기준(원점 좌측 하단, y 위쪽 증가), 농사지와 동일 스케일 880x880
-from pico2d import load_image
+from pico2d import get_time, load_image
 
+import auto_npc
 import camera
 
 SIZE = 880
@@ -20,6 +21,7 @@ ZONES = {
 }
 
 ANIMAL_ORDER = ("chicken", "cow", "pig")
+ANIMAL_FRAME_DURATION = 0.2
 
 
 def zone_rect(animal):
@@ -46,11 +48,13 @@ class RanchZone:
 
     def __init__(self, animal):
         self.animal = animal
+        self.sheet = None
         if RanchZone.fence_image is None:
             RanchZone.fence_image = load_image(
                 "assets/buildings/fence_tile_length.png"
             )
             RanchZone.gate_image = load_image("assets/buildings/fence_gate.png")
+        self.sheet = load_image(f"assets/npc/animal_{animal}.png")
 
     def update(self):
         pass
@@ -71,3 +75,29 @@ class RanchZone:
             64,
             64,
         )
+        self._draw_animals()
+
+    def _draw_animals(self):
+        now = get_time()
+        for a in auto_npc.animals:
+            if a["animal"] != self.animal:
+                continue
+            delta = max(0.0, now - a.setdefault("anim_time", now))
+            a["anim_time"] = now
+            a["frame_timer"] += delta
+            while a["frame_timer"] >= ANIMAL_FRAME_DURATION:
+                a["frame"] = (a["frame"] + 1) % 4
+                a["frame_timer"] -= ANIMAL_FRAME_DURATION
+            flip = "h" if a["facing"] == "left" else ""
+            self.sheet.clip_composite_draw(
+                a["frame"] * 64,
+                0,
+                64,
+                64,
+                0,
+                flip,
+                a["x"] - camera.x,
+                a["y"] - camera.y,
+                56,
+                64,
+            )

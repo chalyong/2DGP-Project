@@ -30,6 +30,9 @@ miners = {
 }
 passes = []
 
+# 목장: 구역별 동물 마릿수 (시작 닭 1마리 — 목장_PRD 3.7)
+animal_counts = {"chicken": 1, "cow": 0, "pig": 0}
+
 # 농사지: 구역 해금 상태와 심은 작물
 # crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
 farm_unlocked = {

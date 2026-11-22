@@ -8,6 +8,7 @@ from pico2d import get_time, load_font, load_image
 import camera
 import farm
 import game_state
+import ranch
 from player import WALK_SPEED_PIXELS_PER_SECOND
 
 
@@ -159,6 +160,8 @@ def update():
     장면 밖에서도 진행된다.
     """
     now = get_time()
+    ensure_animal_population()
+    _update_animals(now)
     for f in states:
         delta = max(0.0, now - f["last_update"])
         f["last_update"] = now
@@ -237,3 +240,72 @@ def _random_spot(crop):
         y = random.uniform(bottom + 16, top - 16)
         if farm.cell_at(crop, x, y) != farm.SPRINKLER_CELL:
             return x, y
+
+
+# --- 목장 동물 (울타리 안 자유 이동, 속도 = 플레이어의 절반) ---
+
+animals = []
+
+
+def _random_animal_spot(animal):
+    left, bottom, right, top = ranch.zone_rect(animal)
+    return (
+        random.uniform(left + 16, right - 16),
+        random.uniform(bottom + 16, top - 16),
+    )
+
+
+def spawn_animal(animal):
+    x, y = _random_animal_spot(animal)
+    animals.append(
+        {
+            "animal": animal,
+            "x": x,
+            "y": y,
+            "tx": x,
+            "ty": y,
+            "facing": "right",
+            "moving": False,
+            "frame": 0,
+            "frame_timer": 0.0,
+            "last_update": get_time(),
+        }
+    )
+
+
+def count_animals(animal):
+    return sum(1 for a in animals if a["animal"] == animal)
+
+
+def remove_animal(animal):
+    for index, a in enumerate(animals):
+        if a["animal"] == animal:
+            del animals[index]
+            return True
+    return False
+
+
+def ensure_animal_population():
+    """game_state.animal_counts만큼 동물 상태를 채운다 (시작 배치·구매 반영)."""
+    for animal in game_state.animal_counts:
+        while count_animals(animal) < game_state.animal_counts[animal]:
+            spawn_animal(animal)
+
+
+def _update_animals(now):
+    for a in animals:
+        delta = max(0.0, now - a["last_update"])
+        a["last_update"] = now
+        dx = a["tx"] - a["x"]
+        dy = a["ty"] - a["y"]
+        distance = math.hypot(dx, dy)
+        step = speed() * delta
+        if distance <= step:
+            a["x"], a["y"] = a["tx"], a["ty"]
+            a["moving"] = False
+            a["tx"], a["ty"] = _random_animal_spot(a["animal"])
+        else:
+            a["x"] += dx / distance * step
+            a["y"] += dy / distance * step
+            a["moving"] = True
+            a["facing"] = "left" if dx < 0 else "right"
