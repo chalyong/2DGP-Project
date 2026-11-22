@@ -89,7 +89,7 @@ def _try_harvest(f, now):
     stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
     if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
         return
-    game_state.collected_items[f["crop"]] += 1
+    game_state.collected_items[f["crop"]] += game_state.harvest_yield()
     slot["harvested_at"] = now
     f["harvest_until"] = now + HARVEST_POSE_SECONDS
 
