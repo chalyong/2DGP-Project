@@ -11,7 +11,7 @@ from player import WALK_SPEED_PIXELS_PER_SECOND
 
 MAX_PER_ZONE = 3
 SPEED_RATIO = 0.5  # 플레이어 속도의 절반 (동물도 동일 배율)
-HARVEST_POSE_SECONDS = 5.0  # 수확 동작 전체 시간 (스프라이트 4프레임과 동일)
+MOTION_SECONDS = 3.0  # 수확·심기 동작 모션 전체 시간 (스프라이트 4프레임과 동일)
 
 states = []
 
@@ -44,7 +44,8 @@ def hire(crop):
             "moving": False,
             "frame": 0,
             "frame_timer": 0.0,
-            "harvest_until": 0.0,
+            "motion_until": 0.0,
+            "action": None,
             "last_update": get_time(),
         }
     )
@@ -52,18 +53,32 @@ def hire(crop):
 
 
 def update():
-    """무작위 이동 + 발밑의 성숙 작물 자동 수확 (장면 밖에서도 진행)."""
+    """무작위 이동 + 발밑 작물 관리 (심기·수확은 모션 후 결과 적용).
+
+    장면 밖에서도 진행된다.
+    """
     now = get_time()
     for f in states:
         delta = max(0.0, now - f["last_update"])
         f["last_update"] = now
-        if now < f["harvest_until"]:
+        if now < f["motion_until"]:
             f["moving"] = False
             continue
-        _try_harvest(f, now)
-        if now < f["harvest_until"]:
+        if f["action"] is not None:
+            _apply_action(f, now)
+            f["action"] = None
             f["moving"] = False
             continue
+        index = farm.cell_at(f["crop"], f["x"], f["y"])
+        if index is not None and index != farm.SPRINKLER_CELL:
+            slot = game_state.crop_slots.get((f["crop"], index))
+            if slot is None:
+                _start_motion(f, now, ("plant", index))
+                continue
+            stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
+            if farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
+                _start_motion(f, now, ("harvest", index))
+                continue
         dx = f["tx"] - f["x"]
         dy = f["ty"] - f["y"]
         distance = math.hypot(dx, dy)
@@ -77,39 +92,39 @@ def update():
             f["y"] += dy / distance * step
             f["moving"] = True
             f["facing"] = "left" if dx < 0 else "right"
-        _plant_at(f, now)
 
 
-def _plant_at(f, now):
-    """발밑의 빈 칸에 씨앗을 심는다."""
-    index = farm.cell_at(f["crop"], f["x"], f["y"])
-    if index is None or index == farm.SPRINKLER_CELL:
-        return
-    key = (f["crop"], index)
-    if key in game_state.crop_slots:
-        return
-    game_state.crop_slots[key] = {
-        "planted_at": now,
-        "harvested_at": None,
-    }
-
-
-def _try_harvest(f, now):
-    index = farm.cell_at(f["crop"], f["x"], f["y"])
-    if index is None or index == farm.SPRINKLER_CELL:
-        return
-    slot = game_state.crop_slots.get((f["crop"], index))
-    if slot is None:
-        return
-    stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
-    if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
-        return
-    game_state.collected_items[f["crop"]] += game_state.harvest_yield(f["crop"])
-    slot["harvested_at"] = now
-    f["harvest_until"] = now + HARVEST_POSE_SECONDS
-    # 수확 스프라이트를 프레임 0부터 재생
+def _start_motion(f, now, action):
+    """동작 모션을 시작한다. 결과는 모션이 끝난 뒤 적용된다."""
+    f["action"] = action
+    f["motion_until"] = now + MOTION_SECONDS
+    f["moving"] = False
     f["frame"] = 0
     f["frame_timer"] = 0.0
+
+
+def _apply_action(f, now):
+    """모션 종료 시점에 심기/수확 결과를 적용한다 (상태 재검증)."""
+    kind, index = f["action"]
+    key = (f["crop"], index)
+    if kind == "harvest":
+        slot = game_state.crop_slots.get(key)
+        if slot is None:
+            return
+        stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
+        if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
+            return
+        game_state.collected_items[f["crop"]] += game_state.harvest_yield(
+            f["crop"]
+        )
+        slot["harvested_at"] = now
+    else:
+        if key in game_state.crop_slots:
+            return
+        game_state.crop_slots[key] = {
+            "planted_at": now,
+            "harvested_at": None,
+        }
 
 
 def _random_spot(crop):
