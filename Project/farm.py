@@ -13,7 +13,8 @@ FARMER_FRAME_DURATION = 0.15
 
 SIZE = 880
 EXIT = (440, 790)
-MERCHANT = (120, 680)
+MERCHANT = (120, 680)  # 구매 상인 (좌측 상단)
+SELL_MERCHANT = (120, 555)  # 판매 상인 (구매 상인 아래)
 PLAYER_SPAWN = (440, 690)
 
 GRID = 5

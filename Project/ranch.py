@@ -9,7 +9,8 @@ import game_state
 
 SIZE = 880
 EXIT = (440, 790)  # 중앙 상단
-MERCHANT = (120, 680)  # 좌측 상단
+MERCHANT = (120, 680)  # 좌측 상단 (구매)
+SELL_MERCHANT = (120, 555)  # 구매 상인 아래 (판매)
 PLAYER_SPAWN = (440, 690)
 
 ZONE_WIDTH = 240

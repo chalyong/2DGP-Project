@@ -31,7 +31,7 @@ from auto_npc import Miner
 from farm import FarmZone
 from player import Player
 from hud import Hud
-from shop import FARM_SHOP_PAGES, RANCH_SELL_PAGES, RANCH_SHOP_PAGES, Shop
+from shop import FARM_SELL_PAGES, FARM_SHOP_PAGES, RANCH_SELL_PAGES, RANCH_SHOP_PAGES, Shop
 from inventory import Inventory
 
 
@@ -292,6 +292,18 @@ def enter_farm():
         Shop(player, merchant, pages=FARM_SHOP_PAGES, title="FARM SHOP"),
         depth=8,
     )
+    sell_merchant = FarmMerchant(*farm.SELL_MERCHANT)
+    game_world.add_object(sell_merchant, depth=1)
+    game_world.add_object(
+        Shop(
+            player,
+            sell_merchant,
+            mode="sell",
+            sell_rows=FARM_SELL_PAGES,
+            title="FARM MARKET",
+        ),
+        depth=8,
+    )
     game_world.add_object(Inventory(player), depth=8)
 
 
@@ -326,12 +338,18 @@ def enter_ranch():
     game_world.add_object(Breeder(*ranch.BREEDER_POSITION), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(
+        Shop(player, merchant, pages=RANCH_SHOP_PAGES, title="RANCH SHOP"),
+        depth=8,
+    )
+    sell_merchant = RanchMerchant(*ranch.SELL_MERCHANT)
+    game_world.add_object(sell_merchant, depth=1)
+    game_world.add_object(
         Shop(
             player,
-            merchant,
-            pages=RANCH_SHOP_PAGES,
-            sell_pages=RANCH_SELL_PAGES,
-            title="RANCH SHOP",
+            sell_merchant,
+            mode="sell",
+            sell_rows=RANCH_SELL_PAGES,
+            title="RANCH MARKET",
         ),
         depth=8,
     )

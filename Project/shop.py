@@ -32,6 +32,21 @@ SELL_PAGES = (
     ("gold",),
 )
 
+# 광산 판매 기본 행: (키, 판매가, 종류)
+DEFAULT_ORE_SELL_ROWS = tuple(
+    tuple((name, ORE_SELL_PRICES[name], "resource") for name in page)
+    for page in SELL_PAGES
+)
+
+# 농사지 판매 (작물 — 가격 기본값, 농장_PRD 7장 결정사항)
+FARM_SELL_PAGES = (
+    (
+        ("wheat", 15, "resource"),
+        ("potato", 25, "resource"),
+        ("strawberry", 40, "resource"),
+    ),
+)
+
 # ?띿궗吏 ?곸젏 ?곹뭹 (F4?먯꽌 ??ぉ???쒖감 異붽?)
 RANCH_SHOP_PAGES = [
     (
@@ -229,13 +244,16 @@ class Shop:
     description_font = None
     ore_images = {}
 
-    def __init__(self, player, merchant, mode="buy", pages=None, title="MINING SHOP", sell_pages=None):
+    def __init__(self, player, merchant, mode="buy", pages=None, title=None, sell_rows=None):
         self.player = player
         self.merchant = merchant
         self.mode = mode
         self.pages = ITEM_PAGES if pages is None else pages
-        self.sell_pages = list(sell_pages) if sell_pages else []
-        self.title = title
+        # 판매 모드 행: (키, 판매가, 종류) — 기본은 광산 광물
+        self.sell_rows = (
+            list(sell_rows) if sell_rows is not None else list(DEFAULT_ORE_SELL_ROWS)
+        )
+        self.title = title or ("ORE MARKET" if mode == "sell" else "MINING SHOP")
         self.open = False
         self.page = 0
         self.page_change_time = -0.2
@@ -300,53 +318,27 @@ class Shop:
         ):
             y = camera.SCREEN_HEIGHT - event.y
             if self.mode == "sell":
-                ores = SELL_PAGES[self.page]
-                for index, ore in enumerate(ores):
+                for index, (key, price, kind) in enumerate(self.sell_rows[self.page]):
                     row_y = 360 - index * 80
                     if 100 <= event.x < 700 and row_y - 40 <= y <= row_y + 20:
-                        self._sell(ore, sell_all=self.shift_held)
+                        self._sell_row(key, price, kind, sell_all=self.shift_held)
                         break
             else:
-                sell_index = self.page - len(self.pages)
-                if 0 <= sell_index < len(self.sell_pages):
-                    for index, (key, price, kind) in enumerate(
-                        self.sell_pages[sell_index]
-                    ):
-                        row_y = 360 - index * 80
-                        if 100 <= event.x < 700 and row_y - 40 <= y <= row_y + 20:
-                            self._sell_ranch(
-                                key, price, kind, sell_all=self.shift_held
-                            )
-                            break
-                else:
-                    items = (
-                        self.pages[self.page]
-                        if self.page < len(self.pages)
-                        else ()
-                    )
-                    for index, item in enumerate(items):
-                        item_y = 360 - index * 80
-                        if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
-                            self._buy(item)
-                            break
+                items = (
+                    self.pages[self.page]
+                    if self.page < len(self.pages)
+                    else ()
+                )
+                for index, item in enumerate(items):
+                    item_y = 360 - index * 80
+                    if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
+                        self._buy(item)
+                        break
 
     def _page_count(self):
         if self.mode == "sell":
-            return len(SELL_PAGES)
-        return len(self.pages) + len(self.sell_pages)
-
-    def _sell(self, ore, sell_all=False):
-        owned = game_state.collected_items[ore]
-        if owned <= 0:
-            self.message = f"NO {ore.upper()}"
-            self.message_time = get_time()
-            return
-        count = owned if sell_all else 1
-        total = count * ORE_SELL_PRICES[ore]
-        game_state.collected_items[ore] = owned - count
-        game_state.money += total
-        self.message = f"SOLD {ore.upper()} x{count}  +$ {total:,}"
-        self.message_time = get_time()
+            return len(self.sell_rows)
+        return len(self.pages)
 
     def _buy(self, item):
         name, price, description, requirement, kind, target = item
@@ -469,42 +461,39 @@ class Shop:
             return
         self.panel.draw_to_origin(40, 100)
         if self.mode == "sell":
-            self._draw_sell_page()
+            self._draw_sell_rows(self.sell_rows[self.page])
         else:
-            sell_index = self.page - len(self.pages)
-            if 0 <= sell_index < len(self.sell_pages):
-                self._draw_ranch_sell_page(self.sell_pages[sell_index])
-            else:
-                self._draw_buy_page()
+            self._draw_buy_page()
         if self.message and get_time() - self.message_time < 1.5:
             self.item_font.draw(300, 170, self.message, (255, 150, 120))
         self.item_font.draw(150, 130, "MOUSE WHEEL: CHANGE PAGE", (180, 190, 205))
         self.item_font.draw(480, 130, "SPACE: CLOSE", (180, 190, 205))
 
-    def _draw_sell_page(self):
-        page_count = len(SELL_PAGES)
+    def _draw_sell_rows(self, rows):
+        """판매 페이지 공통 렌더: 아이콘·보유 수량·판매가 (광산/농장/목장 동일)."""
+        page_count = self._page_count()
         self.title_font.draw(
             300,
             440,
-            f"ORE MARKET  {self.page + 1}/{page_count}",
+            f"{self.title}  {self.page + 1}/{page_count}",
             (255, 239, 177),
         )
-        for index, ore in enumerate(SELL_PAGES[self.page]):
-            price = ORE_SELL_PRICES[ore]
+        for index, (key, price, kind) in enumerate(rows):
             y = 360 - index * 80
-            count = game_state.collected_items[ore]
-            self.ore_images[ore].draw(120, y + 6, 32, 32)
-            self.item_font.draw(165, y, ore.upper(), (235, 235, 235))
-            self.item_font.draw(400, y, f"x {count}", (255, 224, 120))
+            name = key.upper() if kind == "resource" else f"LIVE {key.upper()}"
+            draw_item_icon(key.upper(), 120, y)
+            self.item_font.draw(165, y, name, (235, 235, 235))
+            if kind == "resource":
+                owned = game_state.collected_items.get(key, 0)
+            else:
+                owned = game_state.animal_counts.get(key, 0)
+            self.item_font.draw(400, y, f"x {owned}", (255, 224, 120))
             self.item_font.draw(560, y, "sell x1", (255, 224, 120))
             self.description_font.draw(
-                520, y-20, 
-                "shift+click: sell all", 
-                (180, 190, 205))
+                520, y - 20, "shift+click: sell all", (180, 190, 205)
+            )
             self.description_font.draw(
-                165, y - 20,
-                f"$ {price} / 1",
-                (180, 190, 205),
+                165, y - 20, f"$ {price} / 1", (180, 190, 205)
             )
 
     def _draw_buy_page(self):
@@ -585,32 +574,8 @@ class Shop:
                     165, y - 20, description, (180, 190, 205)
                 )
 
-    def _draw_ranch_sell_page(self, rows):
-        """목장 판매 페이지: (아이콘, 이름, 보유 수량, 판매가)."""
-        page_count = self._page_count()
-        self.title_font.draw(
-            260,
-            440,
-            f"{self.title}  {self.page + 1}/{page_count}",
-            (255, 239, 177),
-        )
-        for index, (key, price, kind) in enumerate(rows):
-            y = 360 - index * 80
-            name = key.upper() if kind == "resource" else f"LIVE {key.upper()}"
-            draw_item_icon(key.upper(), 120, y)
-            self.item_font.draw(165, y, name, (235, 235, 235))
-            if kind == "resource":
-                owned = game_state.collected_items.get(key, 0)
-            else:
-                owned = game_state.animal_counts.get(key, 0)
-            self.item_font.draw(400, y, f"x {owned}", (255, 224, 120))
-            self.item_font.draw(560, y, f"$ {price}", (255, 224, 120))
-            self.description_font.draw(
-                165, y - 20, "click +1 / shift+click: sell all", (180, 190, 205)
-            )
-
-    def _sell_ranch(self, key, price, kind, sell_all=False):
-        """목장 판매: 클릭=1개, shift+클릭=전체."""
+    def _sell_row(self, key, price, kind, sell_all=False):
+        """판매 공통: 클릭=1개, shift+클릭=전체 (자원·동물)."""
         if kind == "resource":
             owned = game_state.collected_items.get(key, 0)
             if owned <= 0:
