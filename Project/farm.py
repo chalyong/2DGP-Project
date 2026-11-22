@@ -20,6 +20,11 @@ ZONES = {
 }
 SPRINKLER_CELL = 12  # 5x5 중앙 칸
 
+# 성장·재성장 시간 (개발 중 결정값, PRD 7장 참조)
+STAGE_SECONDS = 20  # 단계당 시간 -> 씨앗에서 ready까지 60초
+REGROW_SECONDS = 120  # 수확 후 다시 성장하기까지 2분
+READY_STAGE = 3
+
 
 def plow_rect(crop):
     cx, cy = ZONES[crop]
@@ -60,3 +65,20 @@ def sprinkler_rect(crop):
 def is_sprinkler_hit(crop, x, y):
     x0, y0, x1, y1 = sprinkler_rect(crop)
     return x0 <= x < x1 and y0 <= y < y1
+
+
+def crop_stage(slot, now, stage_seconds=None):
+    """작물 성장 단계(0=seed ~ 3=ready). 아직 없는 상태면 None.
+
+    slot: {"planted_at": 시각, "harvested_at": 시각 or None}
+    수확 후 REGROW_SECONDS가 지나면 다시 씨앗부터 자란다.
+    """
+    if stage_seconds is None:
+        stage_seconds = STAGE_SECONDS
+    planted = slot["planted_at"]
+    harvested = slot["harvested_at"]
+    if harvested is not None:
+        if now - harvested < REGROW_SECONDS:
+            return None
+        planted = harvested + REGROW_SECONDS
+    return min(int((now - planted) // stage_seconds), READY_STAGE)

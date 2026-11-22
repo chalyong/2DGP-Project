@@ -36,7 +36,11 @@ class FarmZone:
         key = (self.crop, index)
         if key in game_state.crop_slots:
             return
-        game_state.crop_slots[key] = get_time()
+        now = get_time()
+        game_state.crop_slots[key] = {
+            "planted_at": now,
+            "harvested_at": None,
+        }
 
     def update(self):
         pass
@@ -64,13 +68,16 @@ class FarmZone:
         )
 
     def _draw_crops(self):
-        # seed 프레임(0번) 표시 — 성장 단계 전환은 F3에서 처리
-        for (crop, index), planted_at in game_state.crop_slots.items():
+        now = get_time()
+        for (crop, index), slot in game_state.crop_slots.items():
             if crop != self.crop:
+                continue
+            stage = farm.crop_stage(slot, now)
+            if stage is None:
                 continue
             x0, y0, x1, y1 = farm.cell_rect(crop, index)
             self.crop_image.clip_composite_draw(
-                0,
+                stage * 48,
                 0,
                 48,
                 48,
