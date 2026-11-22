@@ -18,7 +18,7 @@ import auto_npc
 
 
 MAX_MINERS_PER_ZONE = 10
-MAX_ANIMALS_PER_ZONE = 10  # 목장 구역 동물 상한 (목장_PRD 3.7)
+MAX_ANIMALS_PER_ZONE = game_state.ANIMAL_LIMIT_PER_ZONE  # 목장 구역 동물 상한 (목장_PRD 3.7)
 
 # ore selling (sell merchant): unit price, click sells 1, shift+click sells all
 ORE_SELL_PRICES = {
@@ -46,6 +46,7 @@ RANCH_SHOP_PAGES = [
     ),
     (
         ("PIG MANAGER", 1200, "auto collect (max 3)", None, "manager", "pig"),
+        ("BREEDER", 1000, "breed +1 / 60s (max 1)", None, "breeder", None),
     ),
 ]
 
@@ -166,6 +167,8 @@ def item_image(name):
         return "assets/item/hunting_knife.png", None
     if upper.endswith("MANAGER"):
         return "assets/npc/ranch_manager_idle.png", (0, 0, 64, 64)
+    if upper == "BREEDER":
+        return "assets/npc/breeder_idle.png", (0, 0, 64, 64)
     if upper in ("CHICKEN", "COW", "PIG"):
         # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
         return f"assets/npc/animal_{upper.lower()}.png", (0, 0, 64, 64)
@@ -414,6 +417,11 @@ class Shop:
                 )
                 self.message_time = get_time()
                 return
+        if kind == "breeder":
+            if game_state.breeder_owned:
+                self.message = "ALREADY OWNED"
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -447,6 +455,8 @@ class Shop:
             game_state.hunting_knives += 1
         elif kind == "manager":
             auto_npc.hire_manager(target)
+        elif kind == "breeder":
+            game_state.breeder_owned = True
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 

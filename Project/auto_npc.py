@@ -163,6 +163,7 @@ def update():
     ensure_animal_population()
     _update_animals(now)
     _update_managers(now)
+    _update_breeder(now)
     for f in states:
         delta = max(0.0, now - f["last_update"])
         f["last_update"] = now
@@ -250,7 +251,10 @@ animals = []
 
 MAX_MANAGERS = 3  # 구역당 최대 (목장_PRD 3.7)
 MANAGER_INTERVAL = 5.0  # 자동 수확 주기(초)
+BREEDER_INTERVAL = 60.0  # 교배 주기(초 — 목장_PRD 3.7)
 manager_states = []
+breeder_timer = 0.0
+_breeder_last = get_time()
 
 
 def _random_animal_spot(animal):
@@ -343,6 +347,23 @@ def _apply_manager_collect(m, now):
     game_state.collected_items[resource] += amount
     game_state.animal_cooldowns[animal] = now
     game_state.ranch_events.append((animal, resource, amount))
+
+
+def _update_breeder(now):
+    """교배 전문가: 2마리 이상인 종마다 주기마다 +1 (상한 준수)."""
+    global breeder_timer, _breeder_last
+    delta = max(0.0, now - _breeder_last)
+    _breeder_last = now
+    if not game_state.breeder_owned:
+        breeder_timer = 0.0
+        return
+    breeder_timer += delta
+    if breeder_timer < BREEDER_INTERVAL:
+        return
+    breeder_timer = 0.0
+    for animal, count in game_state.animal_counts.items():
+        if 2 <= count < game_state.ANIMAL_LIMIT_PER_ZONE:
+            game_state.animal_counts[animal] += 1
 
 
 def _update_managers(now):

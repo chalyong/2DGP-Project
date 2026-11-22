@@ -15,6 +15,7 @@ import ranch
 import auto_npc
 from background import Background
 from props import (
+    Breeder,
     Building,
     FarmExit,
     FarmMerchant,
@@ -319,6 +320,7 @@ def enter_ranch():
     game_world.add_object(merchant, depth=1)
     for animal in ranch.ZONES:
         game_world.add_object(ranch.RanchZone(animal, player), depth=1)
+    game_world.add_object(Breeder(*ranch.BREEDER_POSITION), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(
         Shop(

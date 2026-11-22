@@ -25,6 +25,7 @@ ZONES = {
 ANIMAL_ORDER = ("chicken", "cow", "pig")
 ANIMAL_FRAME_DURATION = 0.2
 COOLDOWN_SECONDS = 120  # 자원 재획득 쿨다운 (목장_PRD 3.7 확정)
+BREEDER_POSITION = (440, 440)  # 구역 사이 중앙 (보유 시에만 표시)
 
 # 동물 -> 획득 자원 (목장_PRD 3.2)
 RESOURCE = {

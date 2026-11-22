@@ -2,6 +2,7 @@
 from pico2d import get_time, load_image
 
 import camera
+import game_state
 
 
 class Building:
@@ -168,6 +169,48 @@ class RanchMerchant:
             self.y - camera.y,
             width,
             height,
+        )
+
+
+# 교배 전문가 (breeder_idle.png 균일 4프레임 64x64 — 보유 시에만 표시)
+class Breeder:
+    image = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.frame = 0
+        self.frame_timer = 0.0
+        self.last_update_time = get_time()
+        if Breeder.image is None:
+            Breeder.image = load_image("assets/npc/breeder_idle.png")
+        self.image = Breeder.image
+
+    def update(self):
+        if not game_state.breeder_owned:
+            return
+        current_time = get_time()
+        delta_time = max(0.0, current_time - self.last_update_time)
+        self.last_update_time = current_time
+        self.frame_timer += delta_time
+        while self.frame_timer >= 0.25:
+            self.frame = (self.frame + 1) % 4
+            self.frame_timer -= 0.25
+
+    def draw(self):
+        if not game_state.breeder_owned:
+            return
+        self.image.clip_composite_draw(
+            self.frame * 64,
+            0,
+            64,
+            64,
+            0,
+            "",
+            self.x - camera.x,
+            self.y - camera.y,
+            64,
+            64,
         )
 
 

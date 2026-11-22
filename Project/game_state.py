@@ -44,6 +44,10 @@ animal_cooldowns = {}
 ranch_events = []
 # 보유 사냥용 칼 (1회용 — 목장_PRD 3.4)
 hunting_knives = 0
+# 구역 동물 상한 (목장_PRD 3.7 확정)
+ANIMAL_LIMIT_PER_ZONE = 10
+# 교배 전문가 보유 (목장_PRD 3.6/3.7)
+breeder_owned = False
 
 # 농사지: 구역 해금 상태와 심은 작물
 # crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
