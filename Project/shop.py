@@ -58,10 +58,11 @@ class Shop:
     description_font = None
     ore_images = {}
 
-    def __init__(self, player, merchant, mode="buy"):
+    def __init__(self, player, merchant, mode="buy", pages=None):
         self.player = player
         self.merchant = merchant
         self.mode = mode
+        self.pages = ITEM_PAGES if pages is None else pages
         self.open = False
         self.page = 0
         self.page_change_time = -0.2
@@ -110,6 +111,8 @@ class Shop:
             and self.open
             and get_time() - self.page_change_time >= 0.2
         ):
+            if self._page_count() == 0:
+                return
             if event.y < 0:
                 self.page = min(self.page + 1, self._page_count() - 1)
             elif event.y > 0:
@@ -131,7 +134,12 @@ class Shop:
                         self._sell(ore, sell_all=self.shift_held)
                         break
             else:
-                for index, item in enumerate(ITEM_PAGES[self.page]):
+                items = (
+                    self.pages[self.page]
+                    if self.page < len(self.pages)
+                    else ()
+                )
+                for index, item in enumerate(items):
                     item_y = 360 - index * 80
                     if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
                         self._buy(item)
@@ -140,7 +148,7 @@ class Shop:
     def _page_count(self):
         if self.mode == "sell":
             return len(SELL_PAGES)
-        return len(ITEM_PAGES)
+        return len(self.pages)
 
     def _sell(self, ore, sell_all=False):
         owned = game_state.collected_items[ore]
@@ -245,11 +253,12 @@ class Shop:
             )
 
     def _draw_buy_page(self):
-        page_count = len(ITEM_PAGES)
-        title = f"MINING SHOP  {self.page + 1}/{page_count}"
+        page_count = len(self.pages)
+        title = f"MINING SHOP  {self.page + 1}/{max(page_count, 1)}"
         self.title_font.draw(260, 440, title, (255, 239, 177))
+        items = self.pages[self.page] if self.page < page_count else ()
         for index, (name, price, description, requirement, kind, target) in enumerate(
-            ITEM_PAGES[self.page]
+            items
         ):
             y = 360 - index * 80
             self.item_font.draw(100, y, name, (235, 235, 235))

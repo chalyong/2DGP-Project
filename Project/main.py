@@ -18,6 +18,8 @@ from mine_exit import MineExit
 from tunnel_exit import TunnelExit
 from tunnel_ore import TunnelOre
 from miner import Miner
+from farm_exit import FarmExit
+from farm_merchant import FarmMerchant
 from player import Player
 from hud import Hud
 from shop import Shop
@@ -33,6 +35,7 @@ current_tunnel = None
 # farm scene: 880x880 background, exit at center top, merchant at top left
 FARM_SIZE = 880
 FARM_EXIT = (440, 790)
+FARM_MERCHANT = (120, 780)
 
 ENTRANCES = (
     (486, "stone"),
@@ -99,8 +102,8 @@ def handle_events():
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
             and in_farm
-            and abs(player.x - FARM_EXIT[0]) <= 80
-            and abs(player.y - FARM_EXIT[1]) <= 80
+            and abs(player.x - FARM_EXIT[0]) <= 90
+            and player.y >= FARM_EXIT[1] - 140
         ):
             leave_farm()
         elif (
@@ -238,13 +241,17 @@ def enter_farm():
     background.use_farm_map()
     player.top_view = True
     player.x = FARM_EXIT[0]
-    player.y = FARM_EXIT[1] - 70
+    player.y = FARM_EXIT[1] - 100
     player.pressed_keys.clear()
     if player.state == "RUN":
         player.stop_running()
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
+    game_world.add_object(FarmExit(*FARM_EXIT), depth=1)
+    merchant = FarmMerchant(*FARM_MERCHANT)
+    game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
+    game_world.add_object(Shop(player, merchant, pages=()), depth=8)
     game_world.add_object(Inventory(player), depth=8)
 
 
