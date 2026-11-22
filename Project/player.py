@@ -70,8 +70,16 @@ class Player:
         self.farm_work_timer = 0.0
         self.farm_work_duration = 0.0
         if Player.farm_work_image is None:
-            Player.farm_work_image = load_image("assets/npc/farmer_harvest.png")
+            Player.farm_work_image = load_image("assets/player/player_harvest.png")
         self.farm_work_image = Player.farm_work_image
+        # player_harvest.png: 4프레임 (원본 여백 제외 콘텐츠 기준 left, width / 높이 512)
+        self.farm_work_frames = (
+            (58, 458),
+            (593, 397),
+            (1172, 373),
+            (1716, 309),
+        )
+        self.farm_work_image_height = self.farm_work_image.h
         self.machine = Machine(
             model=self,
             states=["IDLE", "RUN"],
@@ -200,16 +208,19 @@ class Player:
 
     def draw(self):
         if self.farm_work:
+            left, width = self.farm_work_frames[self.farm_work_frame]
+            frame_height = self.farm_work_image_height
+            draw_width = SPRITE_DRAW_HEIGHT * width / frame_height
             self.farm_work_image.clip_composite_draw(
-                self.farm_work_frame * 64,
+                left,
                 0,
-                64,
-                64,
+                width,
+                frame_height,
                 0,
                 "h" if self.direction == "left" else "",
                 self.x - camera.x,
                 self.y - camera.y,
-                SPRITE_DRAW_WIDTH,
+                draw_width,
                 SPRITE_DRAW_HEIGHT,
             )
             return
