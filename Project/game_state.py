@@ -8,6 +8,9 @@ collected_items = {
     "coal": 0,
     "iron": 0,
     "gold": 0,
+    "wheat": 0,
+    "potato": 0,
+    "strawberry": 0,
 }
 cooked_items = {}
 tools = []

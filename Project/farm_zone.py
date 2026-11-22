@@ -34,13 +34,17 @@ class FarmZone:
         if index is None or index == farm.SPRINKLER_CELL:
             return
         key = (self.crop, index)
-        if key in game_state.crop_slots:
-            return
         now = get_time()
-        game_state.crop_slots[key] = {
-            "planted_at": now,
-            "harvested_at": None,
-        }
+        slot = game_state.crop_slots.get(key)
+        if slot is None:
+            game_state.crop_slots[key] = {
+                "planted_at": now,
+                "harvested_at": None,
+            }
+            return
+        if farm.crop_stage(slot, now) == farm.READY_STAGE:
+            game_state.collected_items[self.crop] += 1
+            slot["harvested_at"] = now
 
     def update(self):
         pass
