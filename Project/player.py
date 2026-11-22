@@ -37,6 +37,7 @@ class Player:
     idle_image = None
     run_image = None
     mining_image = None
+    farm_work_image = None
 
     def __init__(self):
         self.x = 64
@@ -64,6 +65,13 @@ class Player:
         self.mining = False
         self.mining_frame = 0
         self.mining_frame_timer = 0.0
+        self.farm_work = False
+        self.farm_work_frame = 0
+        self.farm_work_timer = 0.0
+        self.farm_work_duration = 0.0
+        if Player.farm_work_image is None:
+            Player.farm_work_image = load_image("assets/npc/farmer_harvest.png")
+        self.farm_work_image = Player.farm_work_image
         self.machine = Machine(
             model=self,
             states=["IDLE", "RUN"],
@@ -103,6 +111,18 @@ class Player:
         self.pressed_keys.clear()
         self._update_state()
 
+    def start_farm_work(self, duration):
+        """씨앗 심기·수확 동작 모션. 이미 다른 동작 중이면 False."""
+        if self.farm_work or self.mining:
+            return False
+        self.farm_work = True
+        self.farm_work_frame = 0
+        self.farm_work_timer = 0.0
+        self.farm_work_duration = duration
+        self.pressed_keys.clear()
+        self._update_state()
+        return True
+
     def _update_state(self):
         is_running = bool(self.pressed_keys)
         if is_running and self.state == "IDLE":
@@ -130,6 +150,19 @@ class Player:
                 if self.mining_frame >= MINING_FRAME_COUNT:
                     self.mining = False
                     self.mining_frame = 0
+            return
+
+        if self.farm_work:
+            self.farm_work_timer += delta_time
+            if self.farm_work_timer >= self.farm_work_duration:
+                self.farm_work = False
+                self.farm_work_timer = 0.0
+                self.farm_work_frame = 0
+            else:
+                frame_duration = self.farm_work_duration / 4
+                self.farm_work_frame = min(
+                    3, int(self.farm_work_timer / frame_duration)
+                )
             return
 
         if self.state == "RUN":
@@ -166,6 +199,21 @@ class Player:
             self._update_state()
 
     def draw(self):
+        if self.farm_work:
+            self.farm_work_image.clip_composite_draw(
+                self.farm_work_frame * 64,
+                0,
+                64,
+                64,
+                0,
+                "h" if self.direction == "left" else "",
+                self.x - camera.x,
+                self.y - camera.y,
+                SPRITE_DRAW_WIDTH,
+                SPRITE_DRAW_HEIGHT,
+            )
+            return
+
         if self.mining:
             self.mining_image.clip_composite_draw(
                 self.mining_frame * self.mining_frame_width,

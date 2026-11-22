@@ -24,6 +24,7 @@ class FarmZone:
     def __init__(self, crop, player):
         self.crop = crop
         self.player = player
+        self.pending = None
         self.notification = None
         self.notification_started = 0
         if FarmZone.plow_image is None:
@@ -45,30 +46,43 @@ class FarmZone:
     def handle_event(self, event):
         if event.type != SDL_KEYDOWN or event.key != SDLK_SPACE:
             return
+        if self.player.movement_locked or self.player.farm_work:
+            return
         if not game_state.farm_unlocked[self.crop]:
             return
         index = farm.cell_at(self.crop, self.player.x, self.player.y)
         if index is None or index == farm.SPRINKLER_CELL:
+            return
+        if self.pending is not None:
             return
         key = (self.crop, index)
         now = get_time()
         slot = game_state.crop_slots.get(key)
         stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
         if slot is None:
-            game_state.crop_slots[key] = {
-                "planted_at": now,
-                "harvested_at": None,
-            }
+            kind = "plant"
+        elif farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
+            kind = "harvest"
+        else:
             return
-        if farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
-            amount = game_state.harvest_yield(self.crop)
-            game_state.collected_items[self.crop] += amount
-            slot["harvested_at"] = now
-            self.notification = f"{self.crop.upper()} * {amount}"
-            self.notification_started = now
+        # 플레이어도 농부와 같은 작업 모션을 먼저 재생한다
+        if not self.player.start_farm_work(farmer.MOTION_SECONDS):
+            return
+        self.pending = (kind, index, now + farmer.MOTION_SECONDS)
 
     def update(self):
-        pass
+        if self.pending is None:
+            return
+        kind, index, done_at = self.pending
+        now = get_time()
+        if now < done_at:
+            return
+        self.pending = None
+        amount = game_state.harvest_yield(self.crop)
+        applied = game_state.apply_farm_work(self.crop, kind, index, now)
+        if applied and kind == "harvest":
+            self.notification = f"{self.crop.upper()} * {amount}"
+            self.notification_started = now
 
     def draw(self):
         if game_state.farm_unlocked[self.crop]:
