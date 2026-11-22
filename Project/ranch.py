@@ -103,6 +103,7 @@ class RanchZone:
     FENCE_SIDE_WIDTH = 48  # 세로 조각 표시 폭
     RAIL_HEIGHT = 29  # 가로 조각 표시 높이
     TILE_COUNT = 5  # 가로 조각 개수(폭/5)
+    VERTICAL_TILE_COUNT = 3  # 세로 조각 개수(높이/3)
     GATE_HALF_WIDTH = 32  # 게이트 통과 구간(반쪽)
 
     def __init__(self, animal, player):
@@ -202,17 +203,20 @@ class RanchZone:
         x0, y0, x1, y1 = zone_rect(self.animal)
         cx, cy = ZONES[self.animal]
         gate_cx = (x0 + x1) / 2
-        # 세로 조각: 좌·우측면
+        # 세로 조각: 좌·우측면에 3개씩 스택 (길게 늘리지 않고 반복 배치)
+        segment_height = ZONE_HEIGHT / RanchZone.VERTICAL_TILE_COUNT
         for side_x in (x0, x1):
-            RanchZone.fence_image.clip_composite_draw(
-                *RanchZone.FENCE_VERTICAL_CLIP,
-                0,
-                "",
-                side_x - camera.x,
-                cy - camera.y,
-                RanchZone.FENCE_SIDE_WIDTH,
-                ZONE_HEIGHT,
-            )
+            for index in range(RanchZone.VERTICAL_TILE_COUNT):
+                sy = y1 - segment_height / 2 - index * segment_height
+                RanchZone.fence_image.clip_composite_draw(
+                    *RanchZone.FENCE_VERTICAL_CLIP,
+                    0,
+                    "",
+                    side_x - camera.x,
+                    sy - camera.y,
+                    RanchZone.FENCE_SIDE_WIDTH,
+                    segment_height,
+                )
         # 가로 조각: 상단 전부 / 하단은 게이트 칸 제외
         step = ZONE_WIDTH / RanchZone.TILE_COUNT
         for index in range(RanchZone.TILE_COUNT):
@@ -275,7 +279,7 @@ class RanchZone:
             )
 
     def _draw_cooldown_timer(self):
-        """구역 우측 하단 내측에 남은 재획득 시간(MM:SS) 표시."""
+        """구역 우측 하단 내측에 남은 재획득 시간(MM:SS) 표시 (노란색 — 회색은 안 보임)."""
         remaining = cooldown_remaining(self.animal)
         if remaining <= 0:
             return
@@ -285,7 +289,7 @@ class RanchZone:
             x1 - 55 - camera.x,
             y0 + 8 - camera.y,
             f"{minutes:02d}:{seconds:02d}",
-            (170, 170, 170),
+            (255, 224, 120),
         )
 
     def _draw_notification(self):
@@ -298,8 +302,9 @@ class RanchZone:
             return
         progress = elapsed / duration
         rise = 30 * progress
+        # 목장 글자는 노란색 계열 유지 (회색 페이드아웃은 안 보임)
         start_color = (255, 239, 177)
-        end_color = (95, 95, 95)
+        end_color = (255, 170, 60)
         color = tuple(
             int(start + (end - start) * progress)
             for start, end in zip(start_color, end_color)
