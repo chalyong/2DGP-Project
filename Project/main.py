@@ -11,6 +11,7 @@ import game_world
 import game_state
 import camera
 import farm
+import ranch
 import auto_npc
 from background import Background
 from props import Building, FarmExit, FarmMerchant, MineExit, MineMerchant, TunnelExit
@@ -28,6 +29,7 @@ running = True
 in_mine = False
 in_tunnel = False
 in_farm = False
+in_ranch = False
 current_tunnel = None
 
 ENTRANCES = (
@@ -102,11 +104,29 @@ def handle_events():
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
+            and in_ranch
+            and abs(player.x - ranch.EXIT[0]) <= 90
+            and player.y >= ranch.EXIT[1] - 140
+        ):
+            leave_ranch()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
             and not in_mine
             and not in_farm
+            and not in_ranch
             and abs(player.x - 480) <= 50
         ):
             enter_farm()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and not in_mine
+            and not in_farm
+            and not in_ranch
+            and abs(player.x - 800) <= 50
+        ):
+            enter_ranch()
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -125,7 +145,7 @@ def update_world():
     game_world.update()
     if in_farm and _sprinkler_blocked(player.x, player.y):
         player.x, player.y = previous_position
-    if in_farm:
+    if in_farm or in_ranch:
         camera.follow_2d(player.x, player.y)
     else:
         camera.follow(player.x)
@@ -136,11 +156,12 @@ def _sprinkler_blocked(x, y):
 
 
 def reset_world():
-    global background, player, inventory, in_mine, in_tunnel, in_farm
+    global background, player, inventory, in_mine, in_tunnel, in_farm, in_ranch
 
     in_mine = False
     in_tunnel = False
     in_farm = False
+    in_ranch = False
     game_world.clear()
     camera.restore_world()
     camera.reset()
@@ -264,6 +285,33 @@ def enter_farm():
 def leave_farm():
     reset_world()
     player.x = 480
+    player.y = 300
+    camera.follow(player.x)
+
+
+def enter_ranch():
+    global in_ranch
+
+    in_ranch = True
+    game_world.clear()
+    camera.reset()
+    camera.set_world(ranch.SIZE, ranch.SIZE)
+    background.use_ranch_map()
+    player.top_view = True
+    player.x = ranch.PLAYER_SPAWN[0]
+    player.y = ranch.PLAYER_SPAWN[1]
+    player.pressed_keys.clear()
+    if player.state == "RUN":
+        player.stop_running()
+    game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
+    game_world.add_object(player, depth=2)
+    game_world.add_object(Inventory(player), depth=8)
+
+
+def leave_ranch():
+    reset_world()
+    player.x = 800
     player.y = 300
     camera.follow(player.x)
 
