@@ -69,17 +69,19 @@ class FarmZone:
         pass
 
     def draw(self):
-        cx, cy = farm.ZONES[self.crop]
         if game_state.farm_unlocked[self.crop]:
             image = FarmZone.plow_image
         else:
             image = FarmZone.locked_image
-        image.draw(
-            cx - camera.x,
-            cy - camera.y,
-            farm.PLOW_WIDTH,
-            farm.PLOW_HEIGHT,
-        )
+        # 5x5 각 칸에 개별 경작지, 해금 전 구역은 locked_plow
+        for index in range(farm.GRID * farm.GRID):
+            x0, y0, x1, y1 = farm.cell_rect(self.crop, index)
+            image.draw(
+                (x0 + x1) / 2 - camera.x,
+                (y0 + y1) / 2 - camera.y,
+                farm.CELL_WIDTH,
+                farm.CELL_HEIGHT,
+            )
         self._draw_crops()
         # 스프링클러: 구역 중앙 칸 (잠긴 구역에도 시설은 존재)
         x0, y0, x1, y1 = farm.sprinkler_rect(self.crop)
