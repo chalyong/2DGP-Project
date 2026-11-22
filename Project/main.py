@@ -30,7 +30,7 @@ from auto_npc import Miner
 from farm import FarmZone
 from player import Player
 from hud import Hud
-from shop import FARM_SHOP_PAGES, RANCH_SHOP_PAGES, Shop
+from shop import FARM_SHOP_PAGES, RANCH_SELL_PAGES, RANCH_SHOP_PAGES, Shop
 from inventory import Inventory
 
 
@@ -321,7 +321,13 @@ def enter_ranch():
         game_world.add_object(ranch.RanchZone(animal, player), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(
-        Shop(player, merchant, pages=RANCH_SHOP_PAGES, title="RANCH SHOP"),
+        Shop(
+            player,
+            merchant,
+            pages=RANCH_SHOP_PAGES,
+            sell_pages=RANCH_SELL_PAGES,
+            title="RANCH SHOP",
+        ),
         depth=8,
     )
     game_world.add_object(Inventory(player), depth=8)

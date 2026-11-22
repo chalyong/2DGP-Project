@@ -44,6 +44,26 @@ RANCH_SHOP_PAGES = [
     ),
 ]
 
+# 목장 판매 페이지: (키, 판매가, 종류) — 클릭 1개, shift+클릭 전체 판매
+# 자원가 = 기본값(목장_PRD 7장), 동물가 = 구매가의 절반(3.7 확정)
+RANCH_SELL_PAGES = (
+    (
+        ("egg", 10, "resource"),
+        ("milk", 30, "resource"),
+        ("mushroom", 25, "resource"),
+    ),
+    (
+        ("chicken", 50, "resource"),
+        ("beef", 90, "resource"),
+        ("pork", 70, "resource"),
+    ),
+    (
+        ("chicken", 150, "animal"),
+        ("cow", 450, "animal"),
+        ("pig", 750, "animal"),
+    ),
+)
+
 FARM_SHOP_PAGES = [
     (
         ("STONE HOE", 200, "wheat+2", ("stone", 10), "farm_tool", None),
@@ -142,6 +162,8 @@ def item_image(name):
     if upper in ("CHICKEN", "COW", "PIG"):
         # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
         return f"assets/npc/animal_{upper.lower()}.png", (0, 0, 64, 64)
+    if upper in ("EGG", "MILK", "MUSHROOM", "BEEF", "PORK"):
+        return f"assets/item/{upper.lower()}.png", None
     if "TUNNEL PASS" in upper:
         ore = upper.split()[0].lower()
         return f"assets/item/ore_{ore}.png", None
@@ -197,11 +219,12 @@ class Shop:
     description_font = None
     ore_images = {}
 
-    def __init__(self, player, merchant, mode="buy", pages=None, title="MINING SHOP"):
+    def __init__(self, player, merchant, mode="buy", pages=None, title="MINING SHOP", sell_pages=None):
         self.player = player
         self.merchant = merchant
         self.mode = mode
         self.pages = ITEM_PAGES if pages is None else pages
+        self.sell_pages = list(sell_pages) if sell_pages else []
         self.title = title
         self.open = False
         self.page = 0
@@ -274,21 +297,33 @@ class Shop:
                         self._sell(ore, sell_all=self.shift_held)
                         break
             else:
-                items = (
-                    self.pages[self.page]
-                    if self.page < len(self.pages)
-                    else ()
-                )
-                for index, item in enumerate(items):
-                    item_y = 360 - index * 80
-                    if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
-                        self._buy(item)
-                        break
+                sell_index = self.page - len(self.pages)
+                if 0 <= sell_index < len(self.sell_pages):
+                    for index, (key, price, kind) in enumerate(
+                        self.sell_pages[sell_index]
+                    ):
+                        row_y = 360 - index * 80
+                        if 100 <= event.x < 700 and row_y - 40 <= y <= row_y + 20:
+                            self._sell_ranch(
+                                key, price, kind, sell_all=self.shift_held
+                            )
+                            break
+                else:
+                    items = (
+                        self.pages[self.page]
+                        if self.page < len(self.pages)
+                        else ()
+                    )
+                    for index, item in enumerate(items):
+                        item_y = 360 - index * 80
+                        if 100 <= event.x < 700 and item_y - 40 <= y <= item_y + 20:
+                            self._buy(item)
+                            break
 
     def _page_count(self):
         if self.mode == "sell":
             return len(SELL_PAGES)
-        return len(self.pages)
+        return len(self.pages) + len(self.sell_pages)
 
     def _sell(self, ore, sell_all=False):
         owned = game_state.collected_items[ore]
@@ -410,7 +445,11 @@ class Shop:
         if self.mode == "sell":
             self._draw_sell_page()
         else:
-            self._draw_buy_page()
+            sell_index = self.page - len(self.pages)
+            if 0 <= sell_index < len(self.sell_pages):
+                self._draw_ranch_sell_page(self.sell_pages[sell_index])
+            else:
+                self._draw_buy_page()
         if self.message and get_time() - self.message_time < 1.5:
             self.item_font.draw(300, 170, self.message, (255, 150, 120))
         self.item_font.draw(150, 130, "MOUSE WHEEL: CHANGE PAGE", (180, 190, 205))
@@ -506,6 +545,55 @@ class Shop:
                 self.description_font.draw(
                     165, y - 20, description, (180, 190, 205)
                 )
+
+    def _draw_ranch_sell_page(self, rows):
+        """목장 판매 페이지: (아이콘, 이름, 보유 수량, 판매가)."""
+        page_count = self._page_count()
+        self.title_font.draw(
+            260,
+            440,
+            f"{self.title}  {self.page + 1}/{page_count}",
+            (255, 239, 177),
+        )
+        for index, (key, price, kind) in enumerate(rows):
+            y = 360 - index * 80
+            name = key.upper() if kind == "resource" else f"LIVE {key.upper()}"
+            draw_item_icon(key.upper(), 120, y)
+            self.item_font.draw(165, y, name, (235, 235, 235))
+            if kind == "resource":
+                owned = game_state.collected_items.get(key, 0)
+            else:
+                owned = game_state.animal_counts.get(key, 0)
+            self.item_font.draw(400, y, f"x {owned}", (255, 224, 120))
+            self.item_font.draw(560, y, f"$ {price}", (255, 224, 120))
+            self.description_font.draw(
+                165, y - 20, "click +1 / shift+click: sell all", (180, 190, 205)
+            )
+
+    def _sell_ranch(self, key, price, kind, sell_all=False):
+        """목장 판매: 클릭=1개, shift+클릭=전체."""
+        if kind == "resource":
+            owned = game_state.collected_items.get(key, 0)
+            if owned <= 0:
+                self.message = f"NO {key.upper()}"
+                self.message_time = get_time()
+                return
+            count = owned if sell_all else 1
+            game_state.collected_items[key] = owned - count
+        else:
+            owned = game_state.animal_counts.get(key, 0)
+            if owned <= 0:
+                self.message = f"NO {key.upper()}"
+                self.message_time = get_time()
+                return
+            count = owned if sell_all else 1
+            game_state.animal_counts[key] = owned - count
+            for _ in range(count):
+                auto_npc.remove_animal(key)
+        total = price * count
+        game_state.money += total
+        self.message = f"SOLD {key.upper()} x{count}  +$ {total:,}"
+        self.message_time = get_time()
 
 
 
