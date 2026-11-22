@@ -36,6 +36,15 @@ FARM_SHOP_PAGES = [
     ),
     (
         ("FERTILIZER", 300, "growth time -50%", None, "farm_tool", None),
+        ("POTATO UNLOCK", 400, "potato zone open", None, "farm_unlock", "potato"),
+        (
+            "STRAWBERRY UNLOCK",
+            800,
+            "strawberry zone open",
+            None,
+            "farm_unlock",
+            "strawberry",
+        ),
     ),
 ]
 
@@ -213,6 +222,15 @@ class Shop:
                     self.message = f"BUY {required} FIRST"
                     self.message_time = get_time()
                     return
+        if kind == "farm_unlock":
+            if game_state.farm_unlocked[target]:
+                self.message = "ALREADY OPEN"
+                self.message_time = get_time()
+                return
+            if target == "strawberry" and not game_state.farm_unlocked["potato"]:
+                self.message = "UNLOCK POTATO FIRST"
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -234,6 +252,8 @@ class Shop:
             game_state.passes.append(f"{target.upper()} TUNNEL PASS")
         elif kind == "farm_tool":
             game_state.farm_tools.append(name)
+        elif kind == "farm_unlock":
+            game_state.farm_unlocked[target] = True
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
