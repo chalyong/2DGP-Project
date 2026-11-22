@@ -34,6 +34,9 @@ FARM_SHOP_PAGES = [
         ("HOE+", 600, "harvest +2", None, "farm_tool", None),
         ("HOE++", 1500, "harvest +3", None, "farm_tool", None),
     ),
+    (
+        ("FERTILIZER", 300, "growth time -50%", None, "farm_tool", None),
+    ),
 ]
 
 # name, price, description, required ore (name, count) or None, kind, kind target
