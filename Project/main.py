@@ -300,6 +300,7 @@ def render_world():
 if __name__ == "__main__":
     open_canvas()
     reset_world()
+    enter_farm()
     try:
         while running:
             handle_events()
