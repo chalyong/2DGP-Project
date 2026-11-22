@@ -159,6 +159,10 @@ def update_world():
         # 울타리 통과 불가 (하단 중앙 게이트만 허용)
         player.x, player.y = previous_position
     if in_farm or in_ranch:
+        # 출구가 설치된 y좌표보다 위로 올라갈 수 없음
+        exit_y = farm.EXIT[1] if in_farm else ranch.EXIT[1]
+        if player.y > exit_y:
+            player.y = exit_y
         camera.follow_2d(player.x, player.y)
     else:
         camera.follow(player.x)
