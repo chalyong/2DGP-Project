@@ -24,6 +24,7 @@ ZONES = {
 
 ANIMAL_ORDER = ("chicken", "cow", "pig")
 ANIMAL_FRAME_DURATION = 0.2
+COOLDOWN_SECONDS = 120  # 자원 재획득 쿨다운 (목장_PRD 3.7 확정)
 
 # 동물 -> 획득 자원 (목장_PRD 3.2)
 RESOURCE = {
@@ -31,6 +32,14 @@ RESOURCE = {
     "cow": "milk",
     "pig": "mushroom",
 }
+
+
+def cooldown_remaining(animal):
+    """남은 재획득 시간(초). 준비됐으면 0 이하."""
+    last = game_state.animal_cooldowns.get(animal)
+    if last is None:
+        return 0.0
+    return COOLDOWN_SECONDS - (get_time() - last)
 
 
 def zone_rect(animal):
@@ -84,6 +93,8 @@ class RanchZone:
             return
         if game_state.animal_counts[self.animal] <= 0:
             return  # 동물 0마리 구역은 무응답
+        if cooldown_remaining(self.animal) > 0:
+            return  # 재획득 전 중복 획득 불가
         now = get_time()
         if not self.player.start_farm_work(auto_npc.MOTION_SECONDS):
             return
@@ -104,6 +115,7 @@ class RanchZone:
             return
         resource = RESOURCE[self.animal]
         game_state.collected_items[resource] += amount
+        game_state.animal_cooldowns[self.animal] = now
         self.notification = f"{resource.upper()} * {amount}"
         self.notification_started = now
 
@@ -124,7 +136,22 @@ class RanchZone:
             64,
         )
         self._draw_animals()
+        self._draw_cooldown_timer()
         self._draw_notification()
+
+    def _draw_cooldown_timer(self):
+        """구역 우측 하단 내측에 남은 재획득 시간(MM:SS) 표시."""
+        remaining = cooldown_remaining(self.animal)
+        if remaining <= 0:
+            return
+        minutes, seconds = divmod(int(remaining + 0.999), 60)
+        x0, y0, x1, y1 = zone_rect(self.animal)
+        RanchZone.font.draw(
+            x1 - 55 - camera.x,
+            y0 + 8 - camera.y,
+            f"{minutes:02d}:{seconds:02d}",
+            (170, 170, 170),
+        )
 
     def _draw_notification(self):
         if not self.notification:
