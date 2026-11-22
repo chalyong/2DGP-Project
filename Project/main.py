@@ -155,6 +155,9 @@ def update_world():
     game_world.update()
     if in_farm and _sprinkler_blocked(player.x, player.y):
         player.x, player.y = previous_position
+    if in_ranch and ranch.fence_blocked(player.x, player.y):
+        # 울타리 통과 불가 (하단 중앙 게이트만 허용)
+        player.x, player.y = previous_position
     if in_farm or in_ranch:
         camera.follow_2d(player.x, player.y)
     else:
@@ -369,7 +372,7 @@ def render_world():
 if __name__ == "__main__":
     open_canvas()
     reset_world()
-    enter_farm()
+    enter_ranch()
     try:
         while running:
             handle_events()

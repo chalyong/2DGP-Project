@@ -65,13 +65,44 @@ def zone_at(animal, x, y):
     return x0 <= x < x1 and y0 <= y < y1
 
 
-class RanchZone:
-    """동물 구역: 울타리와 게이트 렌더링 (이후 동물·타이머 렌더 확장)."""
+def fence_blocked(x, y):
+    """좌표가 울타리 줄 위면 True. 하단 중앙 게이트 구간은 통과 허용."""
+    side_half = RanchZone.FENCE_SIDE_WIDTH / 2
+    rail_half = RanchZone.RAIL_HEIGHT / 2
+    gate_half = RanchZone.GATE_HALF_WIDTH
+    for animal in ZONES:
+        x0, y0, x1, y1 = zone_rect(animal)
+        cx = (x0 + x1) / 2
+        # 세로 줄(좌우): 코너에서 가로 조각 높이만큼 위아래로 이어짐
+        if (y0 - rail_half) <= y <= (y1 + rail_half) and (
+            abs(x - x0) <= side_half or abs(x - x1) <= side_half
+        ):
+            return True
+        # 가로 줄: 좌우 세로 조각 폭까지 이어짐
+        if (x0 - side_half) <= x <= (x1 + side_half):
+            if abs(y - y1) <= rail_half:
+                return True  # 상단은 봉쇄
+            if abs(y - y0) <= rail_half and abs(x - cx) > gate_half:
+                return True  # 하단은 게이트만 통과
+    return False
 
-    fence_image = None
+
+class RanchZone:
+    """동물 구역: 울타리(가로·세로 조각 + 게이트)와 동물·타이머 렌더링."""
+
+    fence_image = None  # 세로 조각 (fence_tile_length 콘텐츠)
+    fence_rail = None  # 가로 조각 (fence_tile_width 콘텐츠)
     gate_image = None
     font = None
     manager_images = {}
+
+    # 원본 이미지 여백 제외 콘텐츠 클립 (left, bottom, width, height)
+    FENCE_VERTICAL_CLIP = (17, 32, 1170, 1203)
+    FENCE_HORIZONTAL_CLIP = (1, 1, 62, 37)
+    FENCE_SIDE_WIDTH = 48  # 세로 조각 표시 폭
+    RAIL_HEIGHT = 29  # 가로 조각 표시 높이
+    TILE_COUNT = 5  # 가로 조각 개수(폭/5)
+    GATE_HALF_WIDTH = 32  # 게이트 통과 구간(반쪽)
 
     def __init__(self, animal, player):
         self.animal = animal
@@ -83,6 +114,9 @@ class RanchZone:
         if RanchZone.fence_image is None:
             RanchZone.fence_image = load_image(
                 "assets/buildings/fence_tile_length.png"
+            )
+            RanchZone.fence_rail = load_image(
+                "assets/buildings/fence_tile_width.png"
             )
             RanchZone.gate_image = load_image("assets/buildings/fence_gate.png")
         if RanchZone.font is None:
@@ -156,25 +190,53 @@ class RanchZone:
         self.notification_started = now
 
     def draw(self):
-        x0, y0, x1, y1 = zone_rect(self.animal)
-        cx, cy = ZONES[self.animal]
-        RanchZone.fence_image.draw(
-            cx - camera.x,
-            cy - camera.y,
-            ZONE_WIDTH,
-            ZONE_HEIGHT,
-        )
-        # 게이트: 구역 하단 중앙 (들어오는 방향)
-        RanchZone.gate_image.draw(
-            (x0 + x1) / 2 - camera.x,
-            y0 - camera.y,
-            64,
-            64,
-        )
+        self._draw_fence()
         self._draw_animals()
         self._draw_managers()
         self._draw_cooldown_timer()
         self._draw_notification()
+
+    def _draw_fence(self):
+        """세로 조각(좌우) + 가로 조각 타일(상단·하단) + 하단 중앙 게이트."""
+        x0, y0, x1, y1 = zone_rect(self.animal)
+        cx, cy = ZONES[self.animal]
+        gate_cx = (x0 + x1) / 2
+        # 세로 조각: 좌·우측면
+        for side_x in (x0, x1):
+            RanchZone.fence_image.clip_composite_draw(
+                *RanchZone.FENCE_VERTICAL_CLIP,
+                0,
+                "",
+                side_x - camera.x,
+                cy - camera.y,
+                RanchZone.FENCE_SIDE_WIDTH,
+                ZONE_HEIGHT,
+            )
+        # 가로 조각: 상단 전부 / 하단은 게이트 칸 제외
+        step = ZONE_WIDTH / RanchZone.TILE_COUNT
+        for index in range(RanchZone.TILE_COUNT):
+            tx = x0 + step / 2 + index * step
+            RanchZone.fence_rail.clip_composite_draw(
+                *RanchZone.FENCE_HORIZONTAL_CLIP,
+                0,
+                "",
+                tx - camera.x,
+                y1 - camera.y,
+                step,
+                RanchZone.RAIL_HEIGHT,
+            )
+            if abs(tx - gate_cx) >= RanchZone.GATE_HALF_WIDTH:
+                RanchZone.fence_rail.clip_composite_draw(
+                    *RanchZone.FENCE_HORIZONTAL_CLIP,
+                    0,
+                    "",
+                    tx - camera.x,
+                    y0 - camera.y,
+                    step,
+                    RanchZone.RAIL_HEIGHT,
+                )
+        # 게이트: 하단 중앙 (마지막에 그려 위로 올라옴)
+        RanchZone.gate_image.draw(gate_cx - camera.x, y0 - camera.y, 64, 64)
 
     def _draw_managers(self):
         now = get_time()
