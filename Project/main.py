@@ -21,6 +21,7 @@ from tunnel_ore import TunnelOre
 from miner import Miner
 from farm_exit import FarmExit
 from farm_merchant import FarmMerchant
+from farm_zone import FarmZone
 from player import Player
 from hud import Hud
 from shop import Shop
@@ -246,6 +247,8 @@ def enter_farm():
     game_world.add_object(FarmExit(*farm.EXIT), depth=1)
     merchant = FarmMerchant(*farm.MERCHANT)
     game_world.add_object(merchant, depth=1)
+    for crop in farm.ZONES:
+        game_world.add_object(FarmZone(crop), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant, pages=()), depth=8)
     game_world.add_object(Inventory(player), depth=8)
