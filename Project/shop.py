@@ -31,9 +31,9 @@ SELL_PAGES = (
 # 농사지 상점 상품 (F4에서 항목을 순차 추가)
 FARM_SHOP_PAGES = [
     (
-        ("HOE", 200, "harvest +1", None, "farm_tool", None),
-        ("HOE+", 600, "harvest +2", None, "farm_tool", None),
-        ("HOE++", 1500, "harvest +3", None, "farm_tool", None),
+        ("STONE HOE", 200, "harvest +1", ("stone", 10), "farm_tool", None),
+        ("IRON HOE", 600, "harvest +2", ("iron", 10), "farm_tool", None),
+        ("GOLD HOE", 1500, "harvest +4", ("gold", 10), "farm_tool", None),
     ),
     (
         ("FERTILIZER", 300, "growth time -50%", None, "farm_tool", None),
@@ -227,14 +227,14 @@ class Shop:
                 self.message = "ALREADY OWNED"
                 self.message_time = get_time()
                 return
-            if name in ("HOE+", "HOE++"):
-                required = game_state.HOE_LEVELS[
-                    game_state.HOE_LEVELS.index(name) - 1
-                ]
-                if required not in game_state.farm_tools:
-                    self.message = f"BUY {required} FIRST"
-                    self.message_time = get_time()
-                    return
+            if name in game_state.HOE_LEVELS:
+                position = game_state.HOE_LEVELS.index(name)
+                if position > 0:
+                    required = game_state.HOE_LEVELS[position - 1]
+                    if required not in game_state.farm_tools:
+                        self.message = f"BUY {required} FIRST"
+                        self.message_time = get_time()
+                        return
         if kind == "farm_unlock":
             if game_state.farm_unlocked[target]:
                 self.message = "ALREADY OPEN"

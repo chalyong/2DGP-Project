@@ -58,18 +58,18 @@ def mining_yield(ore_name):
     return 1
 
 
-# 농사지 도구: 괭이 등급(수확량)과 비료(성장 시간 단축)
+# 농사지 도구: 곡괭이 등급(수확량)과 비료(성장 시간 단축)
 farm_tools = []
-HOE_LEVELS = ("HOE", "HOE+", "HOE++")  # F4 상품명과 연결
+HOE_LEVELS = ("STONE HOE", "IRON HOE", "GOLD HOE")
+HOE_YIELDS = {"STONE HOE": 2, "IRON HOE": 3, "GOLD HOE": 5}
 
 
 def harvest_yield():
-    """기본 1개, 보유한 최고 등급 괭이에 따라 증가."""
-    level = 0
-    for index, name in enumerate(HOE_LEVELS, start=1):
-        if name in farm_tools:
-            level = index
-    return 1 + level
+    """기본 1개, 보유한 최고 등급 곡괭이에 따라 증가 (곡괭이와 같은 방식)."""
+    for hoe in reversed(HOE_LEVELS):
+        if hoe in farm_tools:
+            return HOE_YIELDS[hoe]
+    return 1
 
 
 def crop_stage_seconds(base_seconds):
