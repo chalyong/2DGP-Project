@@ -77,6 +77,21 @@ def update():
             f["y"] += dy / distance * step
             f["moving"] = True
             f["facing"] = "left" if dx < 0 else "right"
+        _plant_at(f, now)
+
+
+def _plant_at(f, now):
+    """발밑의 빈 칸에 씨앗을 심는다."""
+    index = farm.cell_at(f["crop"], f["x"], f["y"])
+    if index is None or index == farm.SPRINKLER_CELL:
+        return
+    key = (f["crop"], index)
+    if key in game_state.crop_slots:
+        return
+    game_state.crop_slots[key] = {
+        "planted_at": now,
+        "harvested_at": None,
+    }
 
 
 def _try_harvest(f, now):
