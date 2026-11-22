@@ -18,8 +18,6 @@ class Inventory:
     item_font = None
     detail_font = None
     description_font = None
-    item_images = {}
-    crop_images = {}
 
     TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS", "PASSES")
     TAB_START = 76
@@ -48,16 +46,6 @@ class Inventory:
             Inventory.detail_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 16)
         if Inventory.description_font is None:
             Inventory.description_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
-        if not Inventory.item_images:
-            for name in ("stone", "coal", "iron", "gold"):
-                Inventory.item_images[name] = load_image(
-                    f"assets/item/ore_{name}.png"
-                )
-        if not Inventory.crop_images:
-            for name in ("wheat", "potato", "strawberry"):
-                Inventory.crop_images[name] = load_image(
-                    f"assets/farm_tile/crop_{name}.png"
-                )
 
     def handle_event(self, event):
         if event.type == SDL_KEYDOWN and event.key == SDLK_e:
@@ -180,16 +168,7 @@ class Inventory:
 
         for index, (name, count) in enumerate(self._page_slice(all_items)):
             y = self.ROW_Y0 - index * self.ROW_SPACING
-            image = self.item_images.get(name)
-            if image is not None:
-                image.draw(120, y, 42, 42)
-            else:
-                crop_image = self.crop_images.get(name)
-                if crop_image is not None:
-                    # 4단계 시트의 ready 프레임을 아이콘으로 사용
-                    crop_image.clip_composite_draw(
-                        3 * 48, 0, 48, 48, 0, "", 120, y, 42, 42
-                    )
+            shop.draw_item_icon(name, 120, y)
             self.item_font.draw(165, y - 6, name.upper(), (235, 235, 235))
             self.item_font.draw(
                 self.PRICE_X,
@@ -207,11 +186,12 @@ class Inventory:
 
         for index, tool in enumerate(self._page_slice(tools)):
             y = self.ROW_Y0 - index * self.ROW_SPACING
-            self.item_font.draw(100, y, tool, (235, 235, 235))
+            shop.draw_item_icon(tool, 120, y)
+            self.item_font.draw(165, y, tool, (235, 235, 235))
             description = shop.ITEM_DESCRIPTIONS.get(tool, "")
             if description:
                 self.description_font.draw(
-                    100, y - 20, description, (180, 190, 205)
+                    165, y - 20, description, (180, 190, 205)
                 )
 
     def _draw_passes(self):
@@ -221,4 +201,5 @@ class Inventory:
 
         for index, name in enumerate(self._page_slice(game_state.passes)):
             y = self.ROW_Y0 - index * self.ROW_SPACING
-            self.item_font.draw(100, y, name, (235, 235, 235))
+            shop.draw_item_icon(name, 120, y)
+            self.item_font.draw(165, y, name, (235, 235, 235))

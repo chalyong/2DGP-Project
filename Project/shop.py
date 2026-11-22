@@ -12,6 +12,7 @@ from sdl2 import (
 import camera
 import game_state
 import farmer
+import miner
 
 
 MAX_MINERS_PER_ZONE = 10
@@ -98,6 +99,53 @@ ITEM_DESCRIPTIONS = {
     for page in pages
     for item in page
 }
+
+# 크롭 시트의 ready 프레임 / 농부 idle 첫 프레임
+CROP_READY_CLIP = (3 * 48, 0, 48, 48)
+FARMER_IDLE_CLIP = (0, 0, 64, 64)
+_icon_cache = {}
+
+
+def item_image(name):
+    """상품/아이템명에 해당하는 (이미지 경로, 크롭 좌표 or None)."""
+    upper = name.upper()
+    if upper.endswith("PICKAXE"):
+        return "assets/item/pickaxe.png", None
+    if upper.endswith("HOE"):
+        return "assets/item/hoe.png", None
+    if upper == "FERTILIZER":
+        return "assets/item/fertilizer.png", None
+    if "TUNNEL PASS" in upper:
+        ore = upper.split()[0].lower()
+        return f"assets/item/ore_{ore}.png", None
+    if "UNLOCK" in upper:
+        crop = upper.split()[0].lower()
+        return f"assets/farm_tile/crop_{crop}.png", CROP_READY_CLIP
+    if "MINER" in upper:
+        return "assets/npc/mine_miner_mining.png", miner.FRAMES[0]
+    if "FARMER" in upper:
+        return "assets/npc/farmer_idle.png", FARMER_IDLE_CLIP
+    if upper in ("WHEAT", "POTATO", "STRAWBERRY"):
+        return f"assets/farm_tile/crop_{upper.lower()}.png", CROP_READY_CLIP
+    if upper in ("STONE", "COAL", "IRON", "GOLD"):
+        return f"assets/item/ore_{upper.lower()}.png", None
+    return None, None
+
+
+def draw_item_icon(name, x, y, size=42):
+    """상품/아이템 아이콘을 (x, y) 중앙에 그린다."""
+    path, clip = item_image(name)
+    if path is None:
+        return False
+    image = _icon_cache.get(path)
+    if image is None:
+        image = load_image(path)
+        _icon_cache[path] = image
+    if clip is None:
+        image.draw(x, y, size, size)
+    else:
+        image.clip_composite_draw(*clip, 0, "", x, y, size, size)
+    return True
 
 
 class Shop:
@@ -351,7 +399,8 @@ class Shop:
             items
         ):
             y = 360 - index * 80
-            self.item_font.draw(100, y, name, (235, 235, 235))
+            draw_item_icon(name, 120, y)
+            self.item_font.draw(165, y, name, (235, 235, 235))
             self.item_font.draw(600, y, f"$ {price:,}", (255, 224, 120))
             if requirement:
                 ore, count = requirement
@@ -386,6 +435,6 @@ class Shop:
                 )
             if description:
                 self.description_font.draw(
-                    100, y - 20, description, (180, 190, 205)
+                    165, y - 20, description, (180, 190, 205)
                 )
 
