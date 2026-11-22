@@ -7,6 +7,7 @@ class Background:
     image = None
     mine_image = None
     tunnel_image = None
+    farm_image = None
 
     def __init__(self):
         if Background.image is None:
@@ -17,6 +18,10 @@ class Background:
             Background.tunnel_image = load_image(
                 "assets/background/tunnel_interior.png"
             )
+        if Background.farm_image is None:
+            Background.farm_image = load_image(
+                "assets/background/farm_background.png"
+            )
         self.image = Background.image
 
     def use_mine_map(self):
@@ -24,6 +29,9 @@ class Background:
 
     def use_tunnel_map(self):
         self.image = Background.tunnel_image
+
+    def use_farm_map(self):
+        self.image = Background.farm_image
 
     def update(self):
         pass

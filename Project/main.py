@@ -27,7 +27,12 @@ from inventory import Inventory
 running = True
 in_mine = False
 in_tunnel = False
+in_farm = False
 current_tunnel = None
+
+# farm scene: 880x880 background, exit at center top, merchant at top left
+FARM_SIZE = 880
+FARM_EXIT = (440, 790)
 
 ENTRANCES = (
     (486, "stone"),
@@ -93,6 +98,22 @@ def handle_events():
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
+            and in_farm
+            and abs(player.x - FARM_EXIT[0]) <= 80
+            and abs(player.y - FARM_EXIT[1]) <= 80
+        ):
+            leave_farm()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and not in_mine
+            and not in_farm
+            and abs(player.x - 480) <= 50
+        ):
+            enter_farm()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
             and not in_mine
             and abs(player.x - 1440) <= 50
         ):
@@ -104,15 +125,20 @@ def handle_events():
 def update_world():
     game_state.update_miner_income()
     game_world.update()
-    camera.follow(player.x)
+    if in_farm:
+        camera.follow_2d(player.x, player.y)
+    else:
+        camera.follow(player.x)
 
 
 def reset_world():
-    global background, player, inventory, in_mine, in_tunnel
+    global background, player, inventory, in_mine, in_tunnel, in_farm
 
     in_mine = False
     in_tunnel = False
+    in_farm = False
     game_world.clear()
+    camera.restore_world()
     camera.reset()
     background = Background()
     game_world.add_object(background, depth=0)
@@ -200,6 +226,32 @@ def enter_tunnel(ore_name):
     game_world.add_object(player, depth=2)
     game_world.add_object(Inventory(player), depth=8)
     camera.reset()
+
+
+def enter_farm():
+    global in_farm
+
+    in_farm = True
+    game_world.clear()
+    camera.reset()
+    camera.set_world(FARM_SIZE, FARM_SIZE)
+    background.use_farm_map()
+    player.x = FARM_EXIT[0]
+    player.y = FARM_EXIT[1] - 70
+    player.pressed_keys.clear()
+    if player.state == "RUN":
+        player.stop_running()
+    game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
+    game_world.add_object(player, depth=2)
+    game_world.add_object(Inventory(player), depth=8)
+
+
+def leave_farm():
+    reset_world()
+    player.x = 480
+    player.y = 300
+    camera.follow(player.x)
 
 
 def leave_tunnel():
