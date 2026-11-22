@@ -113,7 +113,7 @@ CROP_ITEM_ASSETS = {
 }
 _icon_cache = {}
 ICON_WIDTH = 42
-ICON_MAX_HEIGHT = 60  # 세로로 긴 아이콘(광부 등)의 최대 높이
+ICON_MAX_HEIGHT = 70  # 세로로 긴 아이콘(광부 등)의 최대 높이 (행 간격 80에서 안전)
 
 
 def item_image(name):
