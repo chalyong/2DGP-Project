@@ -7,6 +7,8 @@ import farmer
 import game_state
 
 FARMER_FRAME_DURATION = 0.15
+# 수확 스프라이트는 전체 5초 동안 1사이클 (4프레임 × 1.25초)
+FARMER_HARVEST_FRAME_DURATION = farmer.HARVEST_POSE_SECONDS / 4
 
 
 class FarmZone:
@@ -59,7 +61,7 @@ class FarmZone:
             }
             return
         if farm.crop_stage(slot, now, stage_seconds) == farm.READY_STAGE:
-            amount = game_state.harvest_yield()
+            amount = game_state.harvest_yield(self.crop)
             game_state.collected_items[self.crop] += amount
             slot["harvested_at"] = now
             self.notification = f"{self.crop.upper()} * {amount}"
@@ -101,11 +103,15 @@ class FarmZone:
                 continue
             delta = max(0.0, now - f.setdefault("anim_time", now))
             f["anim_time"] = now
+            harvesting = now < f.get("harvest_until", 0.0)
+            frame_duration = (
+                FARMER_HARVEST_FRAME_DURATION if harvesting else FARMER_FRAME_DURATION
+            )
             f["frame_timer"] += delta
-            while f["frame_timer"] >= FARMER_FRAME_DURATION:
+            while f["frame_timer"] >= frame_duration:
                 f["frame"] = (f["frame"] + 1) % 4
-                f["frame_timer"] -= FARMER_FRAME_DURATION
-            if now < f.get("harvest_until", 0.0):
+                f["frame_timer"] -= frame_duration
+            if harvesting:
                 image = FarmZone.farmer_harvest
             elif f["moving"]:
                 image = FarmZone.farmer_walk
