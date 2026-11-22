@@ -3,7 +3,10 @@ from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 
 import camera
 import farm
+import farmer
 import game_state
+
+FARMER_FRAME_DURATION = 0.15
 
 
 class FarmZone:
@@ -12,6 +15,8 @@ class FarmZone:
     sprinkler_image = None
     crop_images = {}
     font = None
+    farmer_idle = None
+    farmer_walk = None
 
     def __init__(self, crop, player):
         self.crop = crop
@@ -24,6 +29,9 @@ class FarmZone:
             FarmZone.sprinkler_image = load_image("assets/farm_tile/sprinkler.png")
         if FarmZone.font is None:
             FarmZone.font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
+        if FarmZone.farmer_idle is None:
+            FarmZone.farmer_idle = load_image("assets/npc/farmer_idle.png")
+            FarmZone.farmer_walk = load_image("assets/npc/farmer_walk_right.png")
         if crop not in FarmZone.crop_images:
             FarmZone.crop_images[crop] = load_image(
                 f"assets/farm_tile/crop_{crop}.png"
@@ -79,7 +87,34 @@ class FarmZone:
             54,
             70,
         )
+        self._draw_farmers()
         self._draw_notification()
+
+    def _draw_farmers(self):
+        now = get_time()
+        for f in farmer.states:
+            if f["crop"] != self.crop:
+                continue
+            delta = max(0.0, now - f.setdefault("anim_time", now))
+            f["anim_time"] = now
+            f["frame_timer"] += delta
+            while f["frame_timer"] >= FARMER_FRAME_DURATION:
+                f["frame"] = (f["frame"] + 1) % 4
+                f["frame_timer"] -= FARMER_FRAME_DURATION
+            image = FarmZone.farmer_walk if f["moving"] else FarmZone.farmer_idle
+            flip = "h" if f["facing"] == "left" else ""
+            image.clip_composite_draw(
+                f["frame"] * 64,
+                0,
+                64,
+                64,
+                0,
+                flip,
+                f["x"] - camera.x,
+                f["y"] - camera.y,
+                56,
+                64,
+            )
 
     def _draw_notification(self):
         if not self.notification:
