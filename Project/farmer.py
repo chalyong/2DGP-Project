@@ -124,31 +124,9 @@ def _start_motion(f, now, action):
 
 
 def _apply_action(f, now):
-    """모션 종료 시점에 심기/수확 결과를 적용한다 (상태 재검증)."""
+    """모션 종료 시점에 심기/수확 결과를 적용한다 (상태 재검증은 공통 함수가 수행)."""
     kind, index = f["action"]
-    key = (f["crop"], index)
-    if kind == "harvest":
-        slot = game_state.crop_slots.get(key)
-        if slot is None:
-            return
-        stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
-        if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
-            return
-        game_state.collected_items[f["crop"]] += game_state.harvest_yield(
-            f["crop"]
-        )
-        slot["harvested_at"] = now
-    else:
-        slot = game_state.crop_slots.get(key)
-        if slot is not None:
-            stage_seconds = game_state.crop_stage_seconds(farm.STAGE_SECONDS)
-            if farm.crop_stage(slot, now, stage_seconds) is not None:
-                # 모션 중 다른 농부가 심거나 재성장이 끝난 칸은 건너뛴다
-                return
-        game_state.crop_slots[key] = {
-            "planted_at": now,
-            "harvested_at": None,
-        }
+    game_state.apply_farm_work(f["crop"], kind, index, now)
 
 
 def _random_spot(crop):

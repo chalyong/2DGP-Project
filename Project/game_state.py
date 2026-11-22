@@ -1,5 +1,7 @@
 from pico2d import get_time
 
+import farm
+
 
 money = 1000000
 play_start_time = get_time()
@@ -82,6 +84,32 @@ def crop_stage_seconds(base_seconds):
     if "FERTILIZER" in farm_tools:
         return base_seconds * 0.5
     return base_seconds
+
+
+def apply_farm_work(crop, kind, index, now):
+    """심기·수확 결과 적용 (농부/플레이어 공통). 성공 시 True.
+
+    모션 종료 시점에 호출되므로 상태를 다시 검증한다.
+    """
+    key = (crop, index)
+    stage_seconds = crop_stage_seconds(farm.STAGE_SECONDS)
+    if kind == "harvest":
+        slot = crop_slots.get(key)
+        if slot is None:
+            return False
+        if farm.crop_stage(slot, now, stage_seconds) != farm.READY_STAGE:
+            return False
+        collected_items[crop] += harvest_yield(crop)
+        slot["harvested_at"] = now
+        return True
+    slot = crop_slots.get(key)
+    if slot is not None and farm.crop_stage(slot, now, stage_seconds) is not None:
+        return False
+    crop_slots[key] = {
+        "planted_at": now,
+        "harvested_at": None,
+    }
+    return True
 
 
 # passive income: every MINER_CYCLE_SECONDS each purchased miner yields 1 ore,
