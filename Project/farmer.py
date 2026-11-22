@@ -11,7 +11,7 @@ from player import WALK_SPEED_PIXELS_PER_SECOND
 
 MAX_PER_ZONE = 3
 SPEED_RATIO = 0.5  # 플레이어 속도의 절반 (동물도 동일 배율)
-MOTION_SECONDS = 3.0  # 수확·심기 동작 모션 전체 시간 (스프라이트 4프레임과 동일)
+MOTION_SECONDS = 2.0  # 수확·심기 동작 모션 전체 시간 (스프라이트 4프레임과 동일)
 
 states = []
 
@@ -70,7 +70,11 @@ def update():
             f["moving"] = False
             continue
         index = farm.cell_at(f["crop"], f["x"], f["y"])
-        if index is not None and index != farm.SPRINKLER_CELL:
+        if (
+            index is not None
+            and index != farm.SPRINKLER_CELL
+            and not _cell_busy(f["crop"], index, f)
+        ):
             slot = game_state.crop_slots.get((f["crop"], index))
             if slot is None:
                 _start_motion(f, now, ("plant", index))
@@ -92,6 +96,16 @@ def update():
             f["y"] += dy / distance * step
             f["moving"] = True
             f["facing"] = "left" if dx < 0 else "right"
+
+
+def _cell_busy(crop, index, worker):
+    """다른 농부가 같은 칸을 작업 중이면 True."""
+    for other in states:
+        if other is worker or other["crop"] != crop:
+            continue
+        if other["action"] is not None and other["action"][1] == index:
+            return True
+    return False
 
 
 def _start_motion(f, now, action):
