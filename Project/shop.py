@@ -28,7 +28,13 @@ SELL_PAGES = (
 )
 
 # 농사지 상점 상품 (F4에서 항목을 순차 추가)
-FARM_SHOP_PAGES = []
+FARM_SHOP_PAGES = [
+    (
+        ("HOE", 200, "harvest +1", None, "farm_tool", None),
+        ("HOE+", 600, "harvest +2", None, "farm_tool", None),
+        ("HOE++", 1500, "harvest +3", None, "farm_tool", None),
+    ),
+]
 
 # name, price, description, required ore (name, count) or None, kind, kind target
 ITEM_PAGES = (
@@ -191,6 +197,19 @@ class Shop:
             self.message = "ALREADY OPEN"
             self.message_time = get_time()
             return
+        if kind == "farm_tool":
+            if name in game_state.farm_tools:
+                self.message = "ALREADY OWNED"
+                self.message_time = get_time()
+                return
+            if name in ("HOE+", "HOE++"):
+                required = game_state.HOE_LEVELS[
+                    game_state.HOE_LEVELS.index(name) - 1
+                ]
+                if required not in game_state.farm_tools:
+                    self.message = f"BUY {required} FIRST"
+                    self.message_time = get_time()
+                    return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -210,6 +229,8 @@ class Shop:
         elif kind == "pass":
             game_state.open_tunnels[target] = True
             game_state.passes.append(f"{target.upper()} TUNNEL PASS")
+        elif kind == "farm_tool":
+            game_state.farm_tools.append(name)
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
