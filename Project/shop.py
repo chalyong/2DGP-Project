@@ -18,6 +18,7 @@ import auto_npc
 
 
 MAX_MINERS_PER_ZONE = 10
+MAX_ANIMALS_PER_ZONE = 10  # 목장 구역 동물 상한 (목장_PRD 3.7)
 
 # ore selling (sell merchant): unit price, click sells 1, shift+click sells all
 ORE_SELL_PRICES = {
@@ -32,7 +33,13 @@ SELL_PAGES = (
 )
 
 # ?띿궗吏 ?곸젏 ?곹뭹 (F4?먯꽌 ??ぉ???쒖감 異붽?)
-RANCH_SHOP_PAGES = []
+RANCH_SHOP_PAGES = [
+    (
+        ("CHICKEN", 300, "chicken +1 (max 10)", None, "ranch_animal", "chicken"),
+        ("COW", 900, "cow +1 (max 10)", None, "ranch_animal", "cow"),
+        ("PIG", 1500, "pig +1 (max 10)", None, "ranch_animal", "pig"),
+    ),
+]
 
 FARM_SHOP_PAGES = [
     (
@@ -127,6 +134,9 @@ def item_image(name):
         return "assets/item/hoe.png", None
     if upper == "FERTILIZER":
         return "assets/item/fertilizer.png", None
+    if upper in ("CHICKEN", "COW", "PIG"):
+        # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
+        return f"assets/npc/animal_{upper.lower()}.png", (0, 0, 64, 64)
     if "TUNNEL PASS" in upper:
         ore = upper.split()[0].lower()
         return f"assets/item/ore_{ore}.png", None
@@ -345,6 +355,11 @@ class Shop:
                 )
                 self.message_time = get_time()
                 return
+        if kind == "ranch_animal":
+            if game_state.animal_counts[target] >= MAX_ANIMALS_PER_ZONE:
+                self.message = f"{target.upper()} LIMIT ({MAX_ANIMALS_PER_ZONE})"
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -371,6 +386,9 @@ class Shop:
             game_state.passes.append(f"{target.upper()} UNLOCK")
         elif kind == "farmer":
             auto_npc.hire(target)
+        elif kind == "ranch_animal":
+            # 동물 상태는 auto_npc의 ensure_animal_population이 다음 틱에 배치한다
+            game_state.animal_counts[target] += 1
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -458,6 +476,19 @@ class Shop:
                     450,
                     y,
                     f"{owned}/{auto_npc.MAX_PER_ZONE}",
+                    count_color,
+                )
+            if kind == "ranch_animal":
+                owned = game_state.animal_counts[target]
+                count_color = (
+                    (255, 224, 120)
+                    if owned < MAX_ANIMALS_PER_ZONE
+                    else (255, 150, 120)
+                )
+                self.item_font.draw(
+                    450,
+                    y,
+                    f"{owned}/{MAX_ANIMALS_PER_ZONE}",
                     count_color,
                 )
             if description:
