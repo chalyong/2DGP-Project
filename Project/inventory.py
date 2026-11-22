@@ -1,5 +1,10 @@
 from pico2d import get_time, load_font, load_image
-from sdl2 import SDL_MOUSEBUTTONDOWN, SDL_KEYDOWN, SDLK_e
+from sdl2 import (
+    SDL_KEYDOWN,
+    SDL_MOUSEBUTTONDOWN,
+    SDL_MOUSEWHEEL,
+    SDLK_e,
+)
 
 import camera
 import game_state
@@ -16,11 +21,14 @@ class Inventory:
     TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS", "PASSES")
     TAB_START = 76
     TAB_WIDTH = 128
+    ITEMS_PER_PAGE = 3
 
     def __init__(self, player):
         self.player = player
         self.open = False
         self.tab = 0
+        self.page = 0
+        self.page_change_time = -0.2
         if Inventory.panel is None:
             Inventory.panel = load_image("assets/ui/shop_panel.png")
         if Inventory.title_font is None:
@@ -43,6 +51,7 @@ class Inventory:
             self.player.set_movement_locked(self.open)
             if not self.open:
                 self.tab = 0
+                self.page = 0
             return
 
         if (
@@ -57,6 +66,41 @@ class Inventory:
                     (x - self.TAB_START) // self.TAB_WIDTH,
                     len(self.TABS) - 1,
                 )
+                self.page = 0
+            return
+
+        if (
+            event.type == SDL_MOUSEWHEEL
+            and self.open
+            and get_time() - self.page_change_time >= 0.2
+        ):
+            page_count = self._page_count()
+            if page_count <= 1:
+                return
+            if event.y < 0:
+                self.page = min(self.page + 1, page_count - 1)
+            elif event.y > 0:
+                self.page = max(self.page - 1, 0)
+            else:
+                return
+            self.page_change_time = get_time()
+
+    def _page_count(self):
+        if self.tab == 0:
+            return 1
+        if self.tab == 1:
+            count = len(game_state.collected_items)
+        elif self.tab == 2:
+            count = len(game_state.cooked_items)
+        elif self.tab == 3:
+            count = len(game_state.tools)
+        else:
+            count = len(game_state.passes)
+        return max(1, (count + self.ITEMS_PER_PAGE - 1) // self.ITEMS_PER_PAGE)
+
+    def _page_slice(self, sequence):
+        start = self.page * self.ITEMS_PER_PAGE
+        return sequence[start : start + self.ITEMS_PER_PAGE]
 
     def update(self):
         pass
@@ -65,6 +109,7 @@ class Inventory:
         if not self.open:
             return
 
+        self.page = min(self.page, self._page_count() - 1)
         self.panel.draw_to_origin(40, 100)
         self.title_font.draw(300, 455, "INVENTORY", (255, 239, 177))
 
@@ -85,6 +130,13 @@ class Inventory:
             self._draw_passes()
 
         self.detail_font.draw(300, 135, "E: CLOSE", (180, 190, 205))
+        if self.tab != 0 and self._page_count() > 1:
+            self.detail_font.draw(
+                640,
+                135,
+                f"{self.page + 1}/{self._page_count()}",
+                (180, 190, 205),
+            )
 
     def _draw_assets(self):
         elapsed = max(0, int(get_time() - game_state.play_start_time))
@@ -98,12 +150,12 @@ class Inventory:
         )
 
     def _draw_items(self, items):
-        visible_items = list(items.items())
-        if not visible_items:
+        all_items = list(items.items())
+        if not all_items:
             self.detail_font.draw(285, 290, "EMPTY", (180, 190, 205))
             return
 
-        for index, (name, count) in enumerate(visible_items):
+        for index, (name, count) in enumerate(self._page_slice(all_items)):
             y = 350 - index * 65
             image = self.item_images.get(name)
             if image is not None:
@@ -116,7 +168,7 @@ class Inventory:
             self.detail_font.draw(275, 290, "NO TOOLS", (180, 190, 205))
             return
 
-        for index, tool in enumerate(game_state.tools):
+        for index, tool in enumerate(self._page_slice(game_state.tools)):
             self.item_font.draw(120, 350 - index * 55, tool, (235, 235, 235))
 
     def _draw_passes(self):
@@ -124,6 +176,6 @@ class Inventory:
             self.detail_font.draw(280, 290, "NO PASSES", (180, 190, 205))
             return
 
-        for index, name in enumerate(game_state.passes):
+        for index, name in enumerate(self._page_slice(game_state.passes)):
             y = 350 - index * 55
             self.item_font.draw(120, y, name, (235, 235, 235))
