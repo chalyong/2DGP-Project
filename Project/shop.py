@@ -41,6 +41,11 @@ RANCH_SHOP_PAGES = [
     ),
     (
         ("HUNTING KNIFE", 150, "1 hunt: meat +1", None, "knife", None),
+        ("CHICKEN MANAGER", 500, "auto collect (max 3)", None, "manager", "chicken"),
+        ("COW MANAGER", 800, "auto collect (max 3)", None, "manager", "cow"),
+    ),
+    (
+        ("PIG MANAGER", 1200, "auto collect (max 3)", None, "manager", "pig"),
     ),
 ]
 
@@ -159,6 +164,8 @@ def item_image(name):
         return "assets/item/fertilizer.png", None
     if upper == "HUNTING KNIFE":
         return "assets/item/hunting_knife.png", None
+    if upper.endswith("MANAGER"):
+        return "assets/npc/ranch_manager_idle.png", (0, 0, 64, 64)
     if upper in ("CHICKEN", "COW", "PIG"):
         # 목장 동물 구매/판매 아이콘: 동물 시트 첫 프레임
         return f"assets/npc/animal_{upper.lower()}.png", (0, 0, 64, 64)
@@ -400,6 +407,13 @@ class Shop:
                 self.message = f"{target.upper()} LIMIT ({MAX_ANIMALS_PER_ZONE})"
                 self.message_time = get_time()
                 return
+        if kind == "manager":
+            if auto_npc.at_manager_limit(target):
+                self.message = (
+                    f"{target.upper()} MANAGER LIMIT ({auto_npc.MAX_MANAGERS})"
+                )
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
@@ -431,6 +445,8 @@ class Shop:
             game_state.animal_counts[target] += 1
         elif kind == "knife":
             game_state.hunting_knives += 1
+        elif kind == "manager":
+            auto_npc.hire_manager(target)
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -540,6 +556,19 @@ class Shop:
             if kind == "knife":
                 self.item_font.draw(
                     450, y, f"x {game_state.hunting_knives}", (255, 224, 120)
+                )
+            if kind == "manager":
+                owned = auto_npc.count_managers(target)
+                count_color = (
+                    (255, 224, 120)
+                    if owned < auto_npc.MAX_MANAGERS
+                    else (255, 150, 120)
+                )
+                self.item_font.draw(
+                    450,
+                    y,
+                    f"{owned}/{auto_npc.MAX_MANAGERS}",
+                    count_color,
                 )
             if description:
                 self.description_font.draw(

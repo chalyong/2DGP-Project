@@ -40,6 +40,8 @@ passes = []
 animal_counts = {"chicken": 1, "cow": 0, "pig": 0}
 # 구역별 마지막 자원 획득 시각 (2분 쿨다운)
 animal_cooldowns = {}
+# 구역 자동 수확 완료 이벤트 (RanchZone이 꺼내 알림으로 표시)
+ranch_events = []
 # 보유 사냥용 칼 (1회용 — 목장_PRD 3.4)
 hunting_knives = 0
 

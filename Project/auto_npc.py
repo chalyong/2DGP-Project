@@ -162,6 +162,7 @@ def update():
     now = get_time()
     ensure_animal_population()
     _update_animals(now)
+    _update_managers(now)
     for f in states:
         delta = max(0.0, now - f["last_update"])
         f["last_update"] = now
@@ -245,6 +246,11 @@ def _random_spot(crop):
 # --- 목장 동물 (울타리 안 자유 이동, 속도 = 플레이어의 절반) ---
 
 animals = []
+# --- 목장 관리인 (구역 자동 수확 — 목장_PRD 3.6) ---
+
+MAX_MANAGERS = 3  # 구역당 최대 (목장_PRD 3.7)
+MANAGER_INTERVAL = 5.0  # 자동 수확 주기(초)
+manager_states = []
 
 
 def _random_animal_spot(animal):
@@ -290,6 +296,94 @@ def ensure_animal_population():
     for animal in game_state.animal_counts:
         while count_animals(animal) < game_state.animal_counts[animal]:
             spawn_animal(animal)
+
+
+def count_managers(animal):
+    return sum(1 for m in manager_states if m["animal"] == animal)
+
+
+def at_manager_limit(animal):
+    return count_managers(animal) >= MAX_MANAGERS
+
+
+def hire_manager(animal):
+    """구역 관리인 고용. 구역당 3명 초과 시 False."""
+    if at_manager_limit(animal):
+        return False
+    x, y = _random_animal_spot(animal)
+    manager_states.append(
+        {
+            "animal": animal,
+            "x": x,
+            "y": y,
+            "tx": x,
+            "ty": y,
+            "facing": "right",
+            "moving": False,
+            "frame": 0,
+            "frame_timer": 0.0,
+            "last_update": get_time(),
+            "work_timer": 0.0,
+            "action": None,
+            "motion_until": 0.0,
+        }
+    )
+    return True
+
+
+def _apply_manager_collect(m, now):
+    """관리인 수확 결과 적용 (재검증 후 지급 + 이벤트 통보)."""
+    animal = m["animal"]
+    amount = game_state.animal_counts[animal]
+    if amount <= 0:
+        return
+    if ranch.cooldown_remaining(animal) > 0:
+        return
+    resource = ranch.RESOURCE[animal]
+    game_state.collected_items[resource] += amount
+    game_state.animal_cooldowns[animal] = now
+    game_state.ranch_events.append((animal, resource, amount))
+
+
+def _update_managers(now):
+    for m in manager_states:
+        delta = max(0.0, now - m["last_update"])
+        m["last_update"] = now
+        if now < m["motion_until"]:
+            m["moving"] = False
+            continue
+        if m["action"] is not None:
+            _apply_manager_collect(m, now)
+            m["action"] = None
+            m["work_timer"] = 0.0
+            m["moving"] = False
+            continue
+        # 울타리 안 무작위 이동 (동물과 동일)
+        dx = m["tx"] - m["x"]
+        dy = m["ty"] - m["y"]
+        distance = math.hypot(dx, dy)
+        step = speed() * delta
+        if distance <= step:
+            m["x"], m["y"] = m["tx"], m["ty"]
+            m["moving"] = False
+            m["tx"], m["ty"] = _random_animal_spot(m["animal"])
+        else:
+            m["x"] += dx / distance * step
+            m["y"] += dy / distance * step
+            m["moving"] = True
+            m["facing"] = "left" if dx < 0 else "right"
+        # 주기 체크: 준비됐으면 2초 모션 -> 결과 적용
+        m["work_timer"] += delta
+        if m["work_timer"] >= MANAGER_INTERVAL:
+            if (
+                game_state.animal_counts[m["animal"]] > 0
+                and ranch.cooldown_remaining(m["animal"]) <= 0
+            ):
+                m["action"] = "collect"
+                m["motion_until"] = now + MOTION_SECONDS
+                m["moving"] = False
+                m["frame"] = 0
+                m["frame_timer"] = 0.0
 
 
 def _update_animals(now):

@@ -74,7 +74,7 @@
 | --- | --- |
 | CHICKEN / COW / PIG | 해당 동물 +1마리 (구역 한계는 개발 중 결정) |
 | HUNTING KNIFE | 1회용 사냥 칼 +1 |
-| RANCH MANAGER | 구역 자동 수확 관리인 고용 |
+| CHICKEN / COW / PIG MANAGER | 해당 구역 자동 수확 관리인 고용 (구역당 3명) |
 | BREEDER | 교배 전문가 고용 |
 
 ### 3.6 자동화 (8단계와 연결)

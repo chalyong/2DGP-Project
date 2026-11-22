@@ -70,6 +70,7 @@ class RanchZone:
     fence_image = None
     gate_image = None
     font = None
+    manager_images = {}
 
     def __init__(self, animal, player):
         self.animal = animal
@@ -85,6 +86,13 @@ class RanchZone:
             RanchZone.gate_image = load_image("assets/buildings/fence_gate.png")
         if RanchZone.font is None:
             RanchZone.font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
+        for key, path in (
+            ("idle", "assets/npc/ranch_manager_idle.png"),
+            ("walk", "assets/npc/ranch_manager_walk.png"),
+            ("harvest", "assets/npc/ranch_manager_harvest.png"),
+        ):
+            if key not in RanchZone.manager_images:
+                RanchZone.manager_images[key] = load_image(path)
         self.sheet = load_image(f"assets/npc/animal_{animal}.png")
 
     def handle_event(self, event):
@@ -109,6 +117,16 @@ class RanchZone:
         self.pending = (kind, now + auto_npc.MOTION_SECONDS)
 
     def update(self):
+        # 관리인 자동 수확 이벤트 -> 구역 알림
+        now = get_time()
+        mine = [e for e in game_state.ranch_events if e[0] == self.animal]
+        if mine:
+            game_state.ranch_events[:] = [
+                e for e in game_state.ranch_events if e[0] != self.animal
+            ]
+            _, resource, amount = mine[-1]
+            self.notification = f"{resource.upper()} * {amount}"
+            self.notification_started = now
         if self.pending is None:
             return
         kind, done_at = self.pending
@@ -153,8 +171,44 @@ class RanchZone:
             64,
         )
         self._draw_animals()
+        self._draw_managers()
         self._draw_cooldown_timer()
         self._draw_notification()
+
+    def _draw_managers(self):
+        now = get_time()
+        for m in auto_npc.manager_states:
+            if m["animal"] != self.animal:
+                continue
+            delta = max(0.0, now - m.setdefault("anim_time", now))
+            m["anim_time"] = now
+            in_motion = now < m["motion_until"]
+            frame_duration = (
+                auto_npc.MOTION_SECONDS / 4 if in_motion else 0.15
+            )
+            m["frame_timer"] += delta
+            while m["frame_timer"] >= frame_duration:
+                m["frame"] = (m["frame"] + 1) % 4
+                m["frame_timer"] -= frame_duration
+            if in_motion:
+                image = RanchZone.manager_images["harvest"]
+            elif m["moving"]:
+                image = RanchZone.manager_images["walk"]
+            else:
+                image = RanchZone.manager_images["idle"]
+            flip = "h" if m["facing"] == "left" else ""
+            image.clip_composite_draw(
+                m["frame"] * 64,
+                0,
+                64,
+                64,
+                0,
+                flip,
+                m["x"] - camera.x,
+                m["y"] - camera.y,
+                56,
+                64,
+            )
 
     def _draw_cooldown_timer(self):
         """구역 우측 하단 내측에 남은 재획득 시간(MM:SS) 표시."""
