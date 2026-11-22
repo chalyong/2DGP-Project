@@ -1,9 +1,11 @@
 # 목장 레이아웃과 동물 구역 (목장_PRD 3.1 / 3.2)
 # 좌표는 pico2d 기준(원점 좌측 하단, y 위쪽 증가), 농사지와 동일 스케일 880x880
-from pico2d import get_time, load_image
+from pico2d import get_time, load_font, load_image
+from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 
 import auto_npc
 import camera
+import game_state
 
 SIZE = 880
 EXIT = (440, 790)  # 중앙 상단
@@ -22,6 +24,13 @@ ZONES = {
 
 ANIMAL_ORDER = ("chicken", "cow", "pig")
 ANIMAL_FRAME_DURATION = 0.2
+
+# 동물 -> 획득 자원 (목장_PRD 3.2)
+RESOURCE = {
+    "chicken": "egg",
+    "cow": "milk",
+    "pig": "mushroom",
+}
 
 
 def zone_rect(animal):
@@ -45,19 +54,58 @@ class RanchZone:
 
     fence_image = None
     gate_image = None
+    font = None
 
-    def __init__(self, animal):
+    def __init__(self, animal, player):
         self.animal = animal
+        self.player = player
         self.sheet = None
+        self.pending = None
+        self.notification = None
+        self.notification_started = 0
         if RanchZone.fence_image is None:
             RanchZone.fence_image = load_image(
                 "assets/buildings/fence_tile_length.png"
             )
             RanchZone.gate_image = load_image("assets/buildings/fence_gate.png")
+        if RanchZone.font is None:
+            RanchZone.font = load_font(r"C:\Windows\Fonts\consolab.ttf", 14)
         self.sheet = load_image(f"assets/npc/animal_{animal}.png")
 
+    def handle_event(self, event):
+        """구역 안 Space: 2초 작업 모션 후 자원 획득 (목장_PRD 3.3/3.7)."""
+        if event.type != SDL_KEYDOWN or event.key != SDLK_SPACE:
+            return
+        if self.player.movement_locked or self.player.farm_work:
+            return
+        if not zone_at(self.animal, self.player.x, self.player.y):
+            return
+        if self.pending is not None:
+            return
+        if game_state.animal_counts[self.animal] <= 0:
+            return  # 동물 0마리 구역은 무응답
+        now = get_time()
+        if not self.player.start_farm_work(auto_npc.MOTION_SECONDS):
+            return
+        self.pending = ("collect", now + auto_npc.MOTION_SECONDS)
+
     def update(self):
-        pass
+        if self.pending is None:
+            return
+        kind, done_at = self.pending
+        now = get_time()
+        if now < done_at:
+            return
+        self.pending = None
+        if kind != "collect":
+            return
+        amount = game_state.animal_counts[self.animal]
+        if amount <= 0:
+            return
+        resource = RESOURCE[self.animal]
+        game_state.collected_items[resource] += amount
+        self.notification = f"{resource.upper()} * {amount}"
+        self.notification_started = now
 
     def draw(self):
         x0, y0, x1, y1 = zone_rect(self.animal)
@@ -76,6 +124,30 @@ class RanchZone:
             64,
         )
         self._draw_animals()
+        self._draw_notification()
+
+    def _draw_notification(self):
+        if not self.notification:
+            return
+        elapsed = get_time() - self.notification_started
+        duration = 1.0
+        if elapsed >= duration:
+            self.notification = None
+            return
+        progress = elapsed / duration
+        rise = 30 * progress
+        start_color = (255, 239, 177)
+        end_color = (95, 95, 95)
+        color = tuple(
+            int(start + (end - start) * progress)
+            for start, end in zip(start_color, end_color)
+        )
+        RanchZone.font.draw(
+            self.player.x - camera.x - 30,
+            self.player.y - camera.y + 45 + rise,
+            self.notification,
+            color,
+        )
 
     def _draw_animals(self):
         now = get_time()

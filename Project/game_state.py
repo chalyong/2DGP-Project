@@ -13,6 +13,12 @@ collected_items = {
     "wheat": 0,
     "potato": 0,
     "strawberry": 0,
+    "egg": 0,
+    "milk": 0,
+    "mushroom": 0,
+    "chicken": 0,
+    "beef": 0,
+    "pork": 0,
 }
 cooked_items = {}
 tools = []
