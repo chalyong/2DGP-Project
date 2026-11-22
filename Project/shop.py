@@ -173,7 +173,13 @@ ICON_WIDTH = 42
 ICON_MAX_HEIGHT = 70  # ?몃줈濡?湲??꾩씠肄?愿묐? ????理쒕? ?믪씠 (??媛꾧꺽 80?먯꽌 ?덉쟾)
 
 
-def item_image(name):
+def item_image(name, prefer_item=False):
+    # prefer_item: ???? ?? ?? ? assets/item/{??}.png ??
+    # (chicken? ??=?? ??, ????=??? ??? ???)
+    if prefer_item:
+        item_path = f"assets/item/{name.lower()}.png"
+        if os.path.exists(item_path):
+            return item_path, None
     """?곹뭹/?꾩씠?쒕챸???대떦?섎뒗 (?대?吏 寃쎈줈, ?щ∼ 醫뚰몴 or None)."""
     upper = name.upper()
     if upper.endswith("PICKAXE"):
@@ -214,13 +220,13 @@ def item_image(name):
     return None, None
 
 
-def draw_item_icon(name, x, y, size=ICON_WIDTH):
+def draw_item_icon(name, x, y, size=ICON_WIDTH, prefer_item=False):
     """?곹뭹/?꾩씠???꾩씠肄섏쓣 (x, y) 以묒븰???먮낯 鍮꾩쑉 ?좎?濡?洹몃┛??
 
     媛濡쒕뒗 size, ?몃줈??ICON_MAX_HEIGHT ?덉뿉???먮낯 醫낇슒鍮꾨? 留욎텣??
     (?뺤궗媛??꾩씠肄섏? 洹몃?濡?sizexsize, ?몃줈濡?湲?愿묐????몃줈瑜?湲멸쾶)
     """
-    path, clip = item_image(name)
+    path, clip = item_image(name, prefer_item)
     if path is None:
         return False
     image = _icon_cache.get(path)

@@ -4,7 +4,7 @@
 # Keep the game runnable from the repo root, VSCode, or the Project folder.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-from pico2d import clear_canvas, close_canvas, delay, get_events, open_canvas, update_canvas
+from pico2d import clear_canvas, close_canvas, delay, get_events, load_music, open_canvas, update_canvas
 from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
 
 import game_world
@@ -389,8 +389,24 @@ def render_world():
     update_canvas()
 
 
+# 배경음악 재생 유지용 참조 (참조 없으면 GC가 음악을 해제함)
+background_music = None
+
+
+def start_background_music():
+    """main_music를 배경음악으로 무한 반복 재생 (오디오 불가 환경은 무시)."""
+    global background_music
+    try:
+        background_music = load_music("assets/music/main_music.mp3")
+        background_music.set_volume(48)
+        background_music.repeat_play()
+    except IOError:
+        print("background music unavailable")
+
+
 if __name__ == "__main__":
     open_canvas()
+    start_background_music()
     reset_world()
     enter_ranch()
     try:

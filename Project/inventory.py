@@ -168,7 +168,7 @@ class Inventory:
 
         for index, (name, count) in enumerate(self._page_slice(all_items)):
             y = self.ROW_Y0 - index * self.ROW_SPACING
-            shop.draw_item_icon(name, 120, y)
+            shop.draw_item_icon(name, 120, y, prefer_item=True)
             self.item_font.draw(165, y - 6, name.upper(), (235, 235, 235))
             self.item_font.draw(
                 self.PRICE_X,
