@@ -32,6 +32,12 @@ RESOURCE = {
     "cow": "milk",
     "pig": "mushroom",
 }
+# 동물 -> 사냥 시 획득하는 고기 (목장_PRD 3.4)
+MEAT = {
+    "chicken": "chicken",
+    "cow": "beef",
+    "pig": "pork",
+}
 
 
 def cooldown_remaining(animal):
@@ -96,9 +102,11 @@ class RanchZone:
         if cooldown_remaining(self.animal) > 0:
             return  # 재획득 전 중복 획득 불가
         now = get_time()
+        # 칼 보유 시 사냥(자원+고기), 없으면 자원만 획득
+        kind = "hunt" if game_state.hunting_knives > 0 else "collect"
         if not self.player.start_farm_work(auto_npc.MOTION_SECONDS):
             return
-        self.pending = ("collect", now + auto_npc.MOTION_SECONDS)
+        self.pending = (kind, now + auto_npc.MOTION_SECONDS)
 
     def update(self):
         if self.pending is None:
@@ -108,7 +116,7 @@ class RanchZone:
         if now < done_at:
             return
         self.pending = None
-        if kind != "collect":
+        if kind not in ("collect", "hunt"):
             return
         amount = game_state.animal_counts[self.animal]
         if amount <= 0:
@@ -116,7 +124,16 @@ class RanchZone:
         resource = RESOURCE[self.animal]
         game_state.collected_items[resource] += amount
         game_state.animal_cooldowns[self.animal] = now
-        self.notification = f"{resource.upper()} * {amount}"
+        note = f"{resource.upper()} * {amount}"
+        # 모션 종료 시점에 칼이 남아있으면 사냥 처리 (칼 1개 + 동물 1마리 감소)
+        if kind == "hunt" and game_state.hunting_knives > 0:
+            game_state.hunting_knives -= 1
+            meat = MEAT[self.animal]
+            game_state.collected_items[meat] += 1
+            game_state.animal_counts[self.animal] -= 1
+            auto_npc.remove_animal(self.animal)
+            note += f" + {meat.upper()}"
+        self.notification = note
         self.notification_started = now
 
     def draw(self):

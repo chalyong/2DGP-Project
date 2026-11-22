@@ -40,6 +40,8 @@ passes = []
 animal_counts = {"chicken": 1, "cow": 0, "pig": 0}
 # 구역별 마지막 자원 획득 시각 (2분 쿨다운)
 animal_cooldowns = {}
+# 보유 사냥용 칼 (1회용 — 목장_PRD 3.4)
+hunting_knives = 0
 
 # 농사지: 구역 해금 상태와 심은 작물
 # crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
