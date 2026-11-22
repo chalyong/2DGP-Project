@@ -88,8 +88,8 @@ class Inventory:
             self.page_change_time = get_time()
 
     def _tool_list(self):
-        # mine tools + farm tools (incl. fertilizer)
-        return game_state.tools + game_state.farm_tools
+        # mine tools + farm tools (incl. fertilizer) + hunting knife (보유 수량 표시)
+        return game_state.tools + game_state.farm_tools + ["HUNTING KNIFE"]
 
     def _page_count(self):
         if self.tab == 0:
@@ -188,6 +188,13 @@ class Inventory:
             y = self.ROW_Y0 - index * self.ROW_SPACING
             shop.draw_item_icon(tool, 120, y)
             self.item_font.draw(165, y, tool, (235, 235, 235))
+            if tool == "HUNTING KNIFE":
+                self.item_font.draw(
+                    self.PRICE_X,
+                    y,
+                    f"x {game_state.hunting_knives}",
+                    (255, 224, 120),
+                )
             description = shop.ITEM_DESCRIPTIONS.get(tool, "")
             if description:
                 self.description_font.draw(

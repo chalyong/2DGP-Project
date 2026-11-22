@@ -180,14 +180,17 @@ class RanchZone:
         game_state.collected_items[resource] += amount
         game_state.animal_cooldowns[self.animal] = now
         note = f"{resource.upper()} * {amount}"
-        # 모션 종료 시점에 칼이 남아있으면 사냥 처리 (칼 1개 + 동물 1마리 감소)
+        # 모션 종료 시점에 칼이 남으면 min(칼 수, 동물 수)만큼 사냥
+        # (동물·고기·칼 모두 같은 수만큼 감소, 칼이 더 많으면 동물 수만큼만)
         if kind == "hunt" and game_state.hunting_knives > 0:
-            game_state.hunting_knives -= 1
+            kill = min(game_state.hunting_knives, amount)
             meat = MEAT[self.animal]
-            game_state.collected_items[meat] += 1
-            game_state.animal_counts[self.animal] -= 1
-            auto_npc.remove_animal(self.animal)
-            note += f" + {meat.upper()}"
+            game_state.hunting_knives -= kill
+            game_state.animal_counts[self.animal] -= kill
+            for _ in range(kill):
+                auto_npc.remove_animal(self.animal)
+            game_state.collected_items[meat] += kill
+            note += f" + {meat.upper()} * {kill}"
         self.notification = note
         self.notification_started = now
 
@@ -286,8 +289,8 @@ class RanchZone:
         minutes, seconds = divmod(int(remaining + 0.999), 60)
         x0, y0, x1, y1 = zone_rect(self.animal)
         RanchZone.font.draw(
-            x1 - 55 - camera.x,
-            y0 + 8 - camera.y,
+            x1 - 44 - camera.x,
+            y0 - camera.y,
             f"{minutes:02d}:{seconds:02d}",
             (255, 224, 120),
         )

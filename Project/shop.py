@@ -55,7 +55,7 @@ RANCH_SHOP_PAGES = [
         ("PIG", 1500, "pig +1 (max 10)", None, "ranch_animal", "pig"),
     ),
     (
-        ("HUNTING KNIFE", 150, "1 hunt: meat +1", None, "knife", None),
+        ("HUNTING KNIFE", 150, "hunt: meat x min(knife, animal)", None, "knife", None),
         ("CHICKEN MANAGER", 500, "auto collect (max 3)", None, "manager", "chicken"),
         ("COW MANAGER", 800, "auto collect (max 3)", None, "manager", "cow"),
     ),
