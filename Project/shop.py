@@ -355,6 +355,19 @@ class Shop:
                     f"{owned}/{MAX_MINERS_PER_ZONE}",
                     count_color,
                 )
+            if kind == "farmer":
+                owned = farmer.count(target)
+                count_color = (
+                    (255, 224, 120)
+                    if owned < farmer.MAX_PER_ZONE
+                    else (255, 150, 120)
+                )
+                self.item_font.draw(
+                    450,
+                    y,
+                    f"{owned}/{farmer.MAX_PER_ZONE}",
+                    count_color,
+                )
             if description:
                 self.description_font.draw(
                     100, y - 20, description, (180, 190, 205)
