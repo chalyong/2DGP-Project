@@ -10,6 +10,7 @@ from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
 import game_world
 import game_state
 import camera
+import farm
 from background import Background
 from building import Building
 from mine_entrance import MineEntrance
@@ -31,11 +32,6 @@ in_mine = False
 in_tunnel = False
 in_farm = False
 current_tunnel = None
-
-# farm scene: 880x880 background, exit at center top, merchant at top left
-FARM_SIZE = 880
-FARM_EXIT = (440, 790)
-FARM_MERCHANT = (120, 780)
 
 ENTRANCES = (
     (486, "stone"),
@@ -102,8 +98,8 @@ def handle_events():
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
             and in_farm
-            and abs(player.x - FARM_EXIT[0]) <= 90
-            and player.y >= FARM_EXIT[1] - 140
+            and abs(player.x - farm.EXIT[0]) <= 90
+            and player.y >= farm.EXIT[1] - 140
         ):
             leave_farm()
         elif (
@@ -237,18 +233,18 @@ def enter_farm():
     in_farm = True
     game_world.clear()
     camera.reset()
-    camera.set_world(FARM_SIZE, FARM_SIZE)
+    camera.set_world(farm.SIZE, farm.SIZE)
     background.use_farm_map()
     player.top_view = True
-    player.x = FARM_EXIT[0]
-    player.y = FARM_EXIT[1] - 100
+    player.x = farm.PLAYER_SPAWN[0]
+    player.y = farm.PLAYER_SPAWN[1]
     player.pressed_keys.clear()
     if player.state == "RUN":
         player.stop_running()
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
-    game_world.add_object(FarmExit(*FARM_EXIT), depth=1)
-    merchant = FarmMerchant(*FARM_MERCHANT)
+    game_world.add_object(FarmExit(*farm.EXIT), depth=1)
+    merchant = FarmMerchant(*farm.MERCHANT)
     game_world.add_object(merchant, depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(Shop(player, merchant, pages=()), depth=8)

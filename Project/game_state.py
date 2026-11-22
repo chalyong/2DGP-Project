@@ -25,6 +25,15 @@ miners = {
 }
 passes = []
 
+# 농사지: 구역 해금 상태와 심은 작물
+# crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
+farm_unlocked = {
+    "wheat": True,
+    "potato": False,
+    "strawberry": False,
+}
+crop_slots = {}
+
 PICKAXE_ORDER = (
     "WOOD PICKAXE",
     "STONE PICKAXE",
