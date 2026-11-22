@@ -29,7 +29,7 @@ COOLDOWN_SECONDS = 120  # 자원 재획득 쿨다운 (목장_PRD 3.7 확정)
 def breeder_position(animal):
     """구역 울타리 좌측 하단 — 쿨다운 타이머(우측 하단)의 맞은편 (목장_PRD 3.6)."""
     x0, y0, x1, y1 = zone_rect(animal)
-    return (x0 + 40, y0 + 40)
+    return (x0 + 40, y0)
 
 # 동물 -> 획득 자원 (목장_PRD 3.2)
 RESOURCE = {
