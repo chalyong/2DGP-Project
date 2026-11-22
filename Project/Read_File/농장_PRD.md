@@ -114,7 +114,7 @@ farm_tools = []   # 보유 도구: "HOE", "HOE+", "HOE++", "FERTILIZER"
 # harvest_yield(), crop_stage_seconds() 함수 포함
 # collected_items에 "wheat"/"potato"/"strawberry" 키 추가
 
-# farmer.py — 농부 시뮬레이션
+# auto_npc.py — 농부 시뮬레이션
 states = []       # 농부 dict 목록 (crop, x, y, 이동 목표, 애니메이션 상태)
 # hire/at_limit/update/speed 함수, MAX_PER_ZONE = 3
 ```

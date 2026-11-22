@@ -1,4 +1,4 @@
-from pico2d import get_time, load_font, load_image
+﻿from pico2d import get_time, load_font, load_image
 from sdl2 import (
     SDL_KEYDOWN,
     SDL_KEYUP,
@@ -13,8 +13,8 @@ import os
 
 import camera
 import game_state
-import farmer
-import miner
+import auto_npc
+import auto_npc
 
 
 MAX_MINERS_PER_ZONE = 10
@@ -31,7 +31,7 @@ SELL_PAGES = (
     ("gold",),
 )
 
-# 농사지 상점 상품 (F4에서 항목을 순차 추가)
+# ?띿궗吏 ?곸젏 ?곹뭹 (F4?먯꽌 ??ぉ???쒖감 異붽?)
 FARM_SHOP_PAGES = [
     (
         ("STONE HOE", 200, "wheat+2", ("stone", 10), "farm_tool", None),
@@ -94,7 +94,7 @@ ITEM_PAGES = (
     ),
 )
 
-# 상품명 -> 설명 (인벤토리 등 다른 화면에서 재사용)
+# ?곹뭹紐?-> ?ㅻ챸 (?몃깽?좊━ ???ㅻⅨ ?붾㈃?먯꽌 ?ъ궗??
 ITEM_DESCRIPTIONS = {
     item[0]: item[2]
     for pages in (ITEM_PAGES, FARM_SHOP_PAGES)
@@ -102,10 +102,10 @@ ITEM_DESCRIPTIONS = {
     for item in page
 }
 
-# 크롭 시트의 ready 프레임 / 농부 idle 첫 프레임
+# ?щ∼ ?쒗듃??ready ?꾨젅??/ ?띾? idle 泥??꾨젅??
 CROP_READY_CLIP = (3 * 48, 0, 48, 48)
 FARMER_IDLE_CLIP = (0, 0, 64, 64)
-# 인벤토리 작물용 item 에셋 (생성되지 않은 작물은 farm_tile 크롭 시트로 대체)
+# ?몃깽?좊━ ?묐Ъ??item ?먯뀑 (?앹꽦?섏? ?딆? ?묐Ъ? farm_tile ?щ∼ ?쒗듃濡??泥?
 CROP_ITEM_ASSETS = {
     name: f"assets/item/{name}.png"
     for name in ("wheat", "potato", "strawberry")
@@ -113,11 +113,11 @@ CROP_ITEM_ASSETS = {
 }
 _icon_cache = {}
 ICON_WIDTH = 42
-ICON_MAX_HEIGHT = 70  # 세로로 긴 아이콘(광부 등)의 최대 높이 (행 간격 80에서 안전)
+ICON_MAX_HEIGHT = 70  # ?몃줈濡?湲??꾩씠肄?愿묐? ????理쒕? ?믪씠 (??媛꾧꺽 80?먯꽌 ?덉쟾)
 
 
 def item_image(name):
-    """상품/아이템명에 해당하는 (이미지 경로, 크롭 좌표 or None)."""
+    """?곹뭹/?꾩씠?쒕챸???대떦?섎뒗 (?대?吏 寃쎈줈, ?щ∼ 醫뚰몴 or None)."""
     upper = name.upper()
     if upper.endswith("PICKAXE"):
         return "assets/item/pickaxe.png", None
@@ -134,7 +134,7 @@ def item_image(name):
             return CROP_ITEM_ASSETS[crop], None
         return f"assets/farm_tile/crop_{crop}.png", CROP_READY_CLIP
     if "MINER" in upper:
-        return "assets/npc/mine_miner_mining.png", miner.FRAMES[0]
+        return "assets/npc/mine_miner_mining.png", auto_npc.FRAMES[0]
     if "FARMER" in upper:
         return "assets/npc/farmer_idle.png", FARMER_IDLE_CLIP
     if upper.lower() in CROP_ITEM_ASSETS:
@@ -147,10 +147,10 @@ def item_image(name):
 
 
 def draw_item_icon(name, x, y, size=ICON_WIDTH):
-    """상품/아이템 아이콘을 (x, y) 중앙에 원본 비율 유지로 그린다.
+    """?곹뭹/?꾩씠???꾩씠肄섏쓣 (x, y) 以묒븰???먮낯 鍮꾩쑉 ?좎?濡?洹몃┛??
 
-    가로는 size, 세로는 ICON_MAX_HEIGHT 안에서 원본 종횡비를 맞춘다.
-    (정사각 아이콘은 그대로 sizexsize, 세로로 긴 광부는 세로를 길게)
+    媛濡쒕뒗 size, ?몃줈??ICON_MAX_HEIGHT ?덉뿉???먮낯 醫낇슒鍮꾨? 留욎텣??
+    (?뺤궗媛??꾩씠肄섏? 洹몃?濡?sizexsize, ?몃줈濡?湲?愿묐????몃줈瑜?湲멸쾶)
     """
     path, clip = item_image(name)
     if path is None:
@@ -337,9 +337,9 @@ class Shop:
                 self.message = f"UNLOCK {target.upper()} ZONE FIRST"
                 self.message_time = get_time()
                 return
-            if farmer.at_limit(target):
+            if auto_npc.at_limit(target):
                 self.message = (
-                    f"{target.upper()} FARMER LIMIT ({farmer.MAX_PER_ZONE})"
+                    f"{target.upper()} FARMER LIMIT ({auto_npc.MAX_PER_ZONE})"
                 )
                 self.message_time = get_time()
                 return
@@ -368,7 +368,7 @@ class Shop:
             game_state.farm_unlocked[target] = True
             game_state.passes.append(f"{target.upper()} UNLOCK")
         elif kind == "farmer":
-            farmer.hire(target)
+            auto_npc.hire(target)
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
@@ -446,20 +446,22 @@ class Shop:
                     count_color,
                 )
             if kind == "farmer":
-                owned = farmer.count(target)
+                owned = auto_npc.count(target)
                 count_color = (
                     (255, 224, 120)
-                    if owned < farmer.MAX_PER_ZONE
+                    if owned < auto_npc.MAX_PER_ZONE
                     else (255, 150, 120)
                 )
                 self.item_font.draw(
                     450,
                     y,
-                    f"{owned}/{farmer.MAX_PER_ZONE}",
+                    f"{owned}/{auto_npc.MAX_PER_ZONE}",
                     count_color,
                 )
             if description:
                 self.description_font.draw(
                     165, y - 20, description, (180, 190, 205)
                 )
+
+
 

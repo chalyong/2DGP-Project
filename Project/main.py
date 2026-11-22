@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 # pico2d resolves asset paths relative to the current working directory.
 # Keep the game runnable from the repo root, VSCode, or the Project folder.
@@ -11,12 +11,12 @@ import game_world
 import game_state
 import camera
 import farm
-import farmer
+import auto_npc
 from background import Background
 from props import Building, FarmExit, FarmMerchant, MineExit, MineMerchant, TunnelExit
 from mine_entrance import MineEntrance
 from tunnel_ore import TunnelOre
-from miner import Miner
+from auto_npc import Miner
 from farm import FarmZone
 from player import Player
 from hud import Hud
@@ -120,7 +120,7 @@ def handle_events():
 
 def update_world():
     game_state.update_miner_income()
-    farmer.update()
+    auto_npc.update()
     previous_position = (player.x, player.y)
     game_world.update()
     if in_farm and _sprinkler_blocked(player.x, player.y):

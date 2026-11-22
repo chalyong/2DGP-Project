@@ -1,10 +1,10 @@
-# 농사지 레이아웃·재배 구역 기하학과 구역 렌더링
-# 좌표는 pico2d 기준(원점 좌측 하단, y 위쪽 증가), 스케일 40px/m
+﻿# ?띿궗吏 ?덉씠?꾩썐쨌?щ같 援ъ뿭 湲고븯?숆낵 援ъ뿭 ?뚮뜑留?
+# 醫뚰몴??pico2d 湲곗?(?먯젏 醫뚯륫 ?섎떒, y ?꾩そ 利앷?), ?ㅼ???40px/m
 from pico2d import get_time, load_font, load_image
 from sdl2 import SDL_KEYDOWN, SDLK_SPACE
 
 import camera
-import farmer
+import auto_npc
 import game_state
 
 
@@ -22,17 +22,17 @@ PLOW_HEIGHT = 258
 CELL_WIDTH = PLOW_WIDTH / GRID
 CELL_HEIGHT = PLOW_HEIGHT / GRID
 
-# 작물 -> 재배 구역 중심 (우상단, 좌하단, 우하단)
+# ?묐Ъ -> ?щ같 援ъ뿭 以묒떖 (?곗긽?? 醫뚰븯?? ?고븯??
 ZONES = {
     "wheat": (705, 615),
     "potato": (215, 235),
     "strawberry": (665, 235),
 }
-SPRINKLER_CELL = 12  # 5x5 중앙 칸
+SPRINKLER_CELL = 12  # 5x5 以묒븰 移?
 
-# 성장·재성장 시간 (개발 중 결정값, PRD 7장 참조)
-STAGE_SECONDS = 20  # 단계당 시간 -> 씨앗에서 ready까지 60초
-REGROW_SECONDS = 120  # 수확 후 다시 성장하기까지 2분
+# ?깆옣쨌?ъ꽦???쒓컙 (媛쒕컻 以?寃곗젙媛? PRD 7??李몄“)
+STAGE_SECONDS = 20  # ?④퀎???쒓컙 -> ?⑥븮?먯꽌 ready源뚯? 60珥?
+REGROW_SECONDS = 120  # ?섑솗 ???ㅼ떆 ?깆옣?섍린源뚯? 2遺?
 READY_STAGE = 3
 
 
@@ -47,7 +47,7 @@ def plow_rect(crop):
 
 
 def cell_rect(crop, index):
-    """칸 인덱스(0~24, 위쪽 왼쪽부터 가로 방향)의 (x0, y0, x1, y1)."""
+    """移??몃뜳??0~24, ?꾩そ ?쇱そ遺??媛濡?諛⑺뼢)??(x0, y0, x1, y1)."""
     left, bottom, right, top = plow_rect(crop)
     col = index % GRID
     row = index // GRID
@@ -57,7 +57,7 @@ def cell_rect(crop, index):
 
 
 def cell_at(crop, x, y):
-    """좌표가 속한 칸 인덱스, 구역 밖이면 None."""
+    """醫뚰몴媛 ?랁븳 移??몃뜳?? 援ъ뿭 諛뽰씠硫?None."""
     left, bottom, right, top = plow_rect(crop)
     if not (left <= x < right and bottom <= y < top):
         return None
@@ -78,10 +78,10 @@ def is_sprinkler_hit(crop, x, y):
 
 
 def crop_stage(slot, now, stage_seconds=None):
-    """작물 성장 단계(0=seed ~ 3=ready). 아직 없는 상태면 None.
+    """?묐Ъ ?깆옣 ?④퀎(0=seed ~ 3=ready). ?꾩쭅 ?녿뒗 ?곹깭硫?None.
 
-    slot: {"planted_at": 시각, "harvested_at": 시각 or None}
-    수확 후 REGROW_SECONDS가 지나면 다시 씨앗부터 자란다.
+    slot: {"planted_at": ?쒓컖, "harvested_at": ?쒓컖 or None}
+    ?섑솗 ??REGROW_SECONDS媛 吏?섎㈃ ?ㅼ떆 ?⑥븮遺???먮???
     """
     if stage_seconds is None:
         stage_seconds = STAGE_SECONDS
@@ -148,10 +148,10 @@ class FarmZone:
             kind = "harvest"
         else:
             return
-        # 플레이어도 농부와 같은 작업 모션을 먼저 재생한다
-        if not self.player.start_farm_work(farmer.MOTION_SECONDS):
+        # ?뚮젅?댁뼱???띾?? 媛숈? ?묒뾽 紐⑥뀡??癒쇱? ?ъ깮?쒕떎
+        if not self.player.start_farm_work(auto_npc.MOTION_SECONDS):
             return
-        self.pending = (kind, index, now + farmer.MOTION_SECONDS)
+        self.pending = (kind, index, now + auto_npc.MOTION_SECONDS)
 
     def update(self):
         if self.pending is None:
@@ -172,7 +172,7 @@ class FarmZone:
             image = FarmZone.plow_image
         else:
             image = FarmZone.locked_image
-        # 5x5 각 칸에 개별 경작지, 해금 전 구역은 locked_plow
+        # 5x5 媛?移몄뿉 媛쒕퀎 寃쎌옉吏, ?닿툑 ??援ъ뿭? locked_plow
         for index in range(GRID * GRID):
             x0, y0, x1, y1 = cell_rect(self.crop, index)
             image.draw(
@@ -182,7 +182,7 @@ class FarmZone:
                 CELL_HEIGHT,
             )
         self._draw_crops()
-        # 스프링클러: 구역 중앙 칸 (잠긴 구역에도 시설은 존재)
+        # ?ㅽ봽留곹겢?? 援ъ뿭 以묒븰 移?(?좉릿 援ъ뿭?먮룄 ?쒖꽕? 議댁옱)
         x0, y0, x1, y1 = sprinkler_rect(self.crop)
         FarmZone.sprinkler_image.draw(
             (x0 + x1) / 2 - camera.x,
@@ -195,14 +195,14 @@ class FarmZone:
 
     def _draw_farmers(self):
         now = get_time()
-        for f in farmer.states:
+        for f in auto_npc.states:
             if f["crop"] != self.crop:
                 continue
             delta = max(0.0, now - f.setdefault("anim_time", now))
             f["anim_time"] = now
             in_motion = now < f.get("motion_until", 0.0)
             frame_duration = (
-                farmer.MOTION_SECONDS / 4 if in_motion else FARMER_FRAME_DURATION
+                auto_npc.MOTION_SECONDS / 4 if in_motion else FARMER_FRAME_DURATION
             )
             f["frame_timer"] += delta
             while f["frame_timer"] >= frame_duration:
@@ -273,3 +273,4 @@ class FarmZone:
                 44,
                 44,
             )
+
