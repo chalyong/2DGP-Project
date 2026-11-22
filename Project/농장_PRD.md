@@ -79,6 +79,7 @@
 | 3 | STRAWBERRY FARMER | $1,200 | — | 딸기 농부 고용 |
 
 - 곡괭이와 같이 **등급별로 광물 재료가 필요**하고, 수확량은 **곡괭이처럼 작물별로 차등**이다 (밀 → 감자 → 딸기 순으로 감소, 없으면 기본 1).
+- 구매 결과는 인벤토리에 표시된다: **TOOLS 탭**에 괭이·비료, **PASSES 탭**에 감자/딸기 입장권(`POTATO UNLOCK`, `STRAWBERRY UNLOCK`).
 
 - 상점 UI는 광산 상점(`shop.py`)의 페이지/클릭 구조를 재사용한다 (`title="FARM SHOP"`).
 - 구매 결과는 `game_state` / `farmer` 모듈에 기록된다.

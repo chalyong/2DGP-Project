@@ -85,6 +85,10 @@ class Inventory:
                 return
             self.page_change_time = get_time()
 
+    def _tool_list(self):
+        # mine tools + farm tools (incl. fertilizer)
+        return game_state.tools + game_state.farm_tools
+
     def _page_count(self):
         if self.tab == 0:
             return 1
@@ -93,7 +97,7 @@ class Inventory:
         elif self.tab == 2:
             count = len(game_state.cooked_items)
         elif self.tab == 3:
-            count = len(game_state.tools)
+            count = len(self._tool_list())
         else:
             count = len(game_state.passes)
         return max(1, (count + self.ITEMS_PER_PAGE - 1) // self.ITEMS_PER_PAGE)
@@ -164,11 +168,13 @@ class Inventory:
             self.item_font.draw(570, y - 6, f"x {count}", (255, 224, 120))
 
     def _draw_tools(self):
-        if not game_state.tools:
+        # 광산 도구(곡괭이) + 농사지 도구(낫 곡괭이·비료)
+        tools = self._tool_list()
+        if not tools:
             self.detail_font.draw(275, 290, "NO TOOLS", (180, 190, 205))
             return
 
-        for index, tool in enumerate(self._page_slice(game_state.tools)):
+        for index, tool in enumerate(self._page_slice(tools)):
             self.item_font.draw(120, 350 - index * 55, tool, (235, 235, 235))
 
     def _draw_passes(self):

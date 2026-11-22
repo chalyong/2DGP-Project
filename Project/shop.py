@@ -285,6 +285,7 @@ class Shop:
             game_state.farm_tools.append(name)
         elif kind == "farm_unlock":
             game_state.farm_unlocked[target] = True
+            game_state.passes.append(f"{target.upper()} UNLOCK")
         elif kind == "farmer":
             farmer.hire(target)
         self.message = f"PURCHASED {name}"
