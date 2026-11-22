@@ -13,15 +13,10 @@ import camera
 import farm
 import farmer
 from background import Background
-from building import Building
+from props import Building, FarmExit, FarmMerchant, MineExit, MineMerchant, TunnelExit
 from mine_entrance import MineEntrance
-from mine_merchant import MineMerchant
-from mine_exit import MineExit
-from tunnel_exit import TunnelExit
 from tunnel_ore import TunnelOre
 from miner import Miner
-from farm_exit import FarmExit
-from farm_merchant import FarmMerchant
 from farm_zone import FarmZone
 from player import Player
 from hud import Hud
