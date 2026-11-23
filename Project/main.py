@@ -15,8 +15,10 @@ from sdl2 import (
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_SPACE,
+    SDL_RenderClear,
     SDL_RenderSetLogicalSize,
     SDL_RenderWindowToLogical,
+    SDL_SetRenderDrawColor,
     SDL_SetWindowFullscreen,
     SDL_WINDOW_FULLSCREEN_DESKTOP,
 )
@@ -427,7 +429,12 @@ def leave_mine():
 
 
 def render_world():
-    clear_canvas()
+    # clear 색 = 검정(0,0,0) — 전체화면 여백(letterbox)과 빈 영역 바탕색
+    if _pico2d_core.renderer is not None:
+        SDL_SetRenderDrawColor(_pico2d_core.renderer, 0, 0, 0, 255)
+        SDL_RenderClear(_pico2d_core.renderer)
+    else:
+        clear_canvas()
     game_world.render()
     update_canvas()
 
