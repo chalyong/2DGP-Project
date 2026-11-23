@@ -5,7 +5,8 @@
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 from pico2d import clear_canvas, close_canvas, delay, get_events, load_music, open_canvas, update_canvas
-from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE
+import pico2d.pico2d as _pico2d_core  # 렌더러·윈도우 전역이 보관된 서브모듈
+from sdl2 import SDL_KEYDOWN, SDL_QUIT, SDLK_ESCAPE, SDLK_SPACE, SDL_RenderSetLogicalSize
 
 import game_world
 import game_state
@@ -397,6 +398,18 @@ def render_world():
 background_music = None
 
 
+def setup_logical_scale():
+    """논리 좌표 800×600 유지 — 윈도우/전체화면 크기와 무관하게 스케일링.
+
+    렌더러가 화면 크기에 맞춰 알아서 확대/축소하므로 물체 비율이 그대로 유지된다.
+    """
+    # pico2d의 렌더러는 서브모듈(pico2d.pico2d) 전역에 존재
+    if _pico2d_core.renderer is not None:
+        SDL_RenderSetLogicalSize(
+            _pico2d_core.renderer, camera.SCREEN_WIDTH, camera.SCREEN_HEIGHT
+        )
+
+
 def start_background_music():
     """main_music를 배경음악으로 무한 반복 재생 (오디오 불가 환경은 무시)."""
     global background_music
@@ -410,6 +423,7 @@ def start_background_music():
 
 if __name__ == "__main__":
     open_canvas()
+    setup_logical_scale()
     start_background_music()
     reset_world()
     enter_ranch()
