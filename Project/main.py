@@ -17,6 +17,8 @@ from sdl2 import (
     SDLK_SPACE,
     SDL_RenderSetLogicalSize,
     SDL_RenderWindowToLogical,
+    SDL_SetWindowFullscreen,
+    SDL_WINDOW_FULLSCREEN_DESKTOP,
 )
 
 import game_world
@@ -446,6 +448,17 @@ def setup_logical_scale():
         )
 
 
+def setup_fullscreen():
+    """데스크톱 전체화면으로 전환 (해상도 모드 변경 없음 — 현재 해상도 유지).
+
+    해상도·종횡비와 무관하게 논리 800×600 스케일링이 적용된다.
+    """
+    if _pico2d_core.window is not None:
+        SDL_SetWindowFullscreen(
+            _pico2d_core.window, SDL_WINDOW_FULLSCREEN_DESKTOP
+        )
+
+
 def start_background_music():
     """main_music를 배경음악으로 무한 반복 재생 (오디오 불가 환경은 무시)."""
     global background_music
@@ -460,6 +473,7 @@ def start_background_music():
 if __name__ == "__main__":
     open_canvas()
     setup_logical_scale()
+    setup_fullscreen()
     start_background_music()
     reset_world()
     enter_ranch()
