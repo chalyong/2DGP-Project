@@ -1,5 +1,4 @@
-﻿import ctypes
-import os
+﻿import os
 
 # pico2d resolves asset paths relative to the current working directory.
 # Keep the game runnable from the repo root, VSCode, or the Project folder.
@@ -9,15 +8,11 @@ from pico2d import clear_canvas, close_canvas, delay, get_events, load_music, op
 import pico2d.pico2d as _pico2d_core  # 렌더러·윈도우 전역이 보관된 서브모듈
 from sdl2 import (
     SDL_KEYDOWN,
-    SDL_MOUSEBUTTONDOWN,
-    SDL_MOUSEBUTTONUP,
-    SDL_MOUSEMOTION,
     SDL_QUIT,
     SDLK_ESCAPE,
     SDLK_SPACE,
     SDL_RenderClear,
     SDL_RenderSetLogicalSize,
-    SDL_RenderWindowToLogical,
     SDL_SetRenderDrawColor,
     SDL_SetWindowFullscreen,
     SDL_WINDOW_FULLSCREEN_DESKTOP,
@@ -76,35 +71,10 @@ def miner_slot_x(index):
     return MINER_SLOT_CENTER_X + (index - 4.5) * MINER_SLOT_SPACING
 
 
-def to_logical_pointer(event):
-    """마우스 버튼/모션 좌표를 논리 좌표(800×600)로 변환.
-
-    전체화면 스케일링 중에는 윈도우 픽셀 좌표가 들어오므로 렌더러의
-    논리 변환으로 보정한다. 휠 이벤트(x/y는 스크롤 증감량)는 변환하지 않는다.
-    """
-    if event.type not in (
-        SDL_MOUSEBUTTONDOWN,
-        SDL_MOUSEBUTTONUP,
-        SDL_MOUSEMOTION,
-    ):
-        return
-    renderer = _pico2d_core.renderer
-    if renderer is None:
-        return
-    logical_x = ctypes.c_float()
-    logical_y = ctypes.c_float()
-    SDL_RenderWindowToLogical(
-        renderer, event.x, event.y, ctypes.byref(logical_x), ctypes.byref(logical_y)
-    )
-    event.x = int(logical_x.value)
-    event.y = int(logical_y.value)
-
-
 def handle_events():
     global running
 
     for event in get_events():
-        to_logical_pointer(event)
         if event.type == SDL_QUIT:
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
