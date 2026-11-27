@@ -9,6 +9,7 @@ class Background:
     tunnel_image = None
     farm_image = None
     ranch_image = None
+    buffet_image = None
 
     def __init__(self):
         if Background.image is None:
@@ -27,6 +28,10 @@ class Background:
             Background.ranch_image = load_image(
                 "assets/background/ranch_background.png"
             )
+        if Background.buffet_image is None:
+            Background.buffet_image = load_image(
+                "assets/background/buffet_background.png"
+            )
         self.image = Background.image
 
     def use_mine_map(self):
@@ -40,6 +45,9 @@ class Background:
 
     def use_ranch_map(self):
         self.image = Background.ranch_image
+
+    def use_buffet_map(self):
+        self.image = Background.buffet_image
 
     def update(self):
         pass

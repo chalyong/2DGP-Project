@@ -25,11 +25,13 @@ import game_state
 import camera
 import farm
 import ranch
+import buffet
 import auto_npc
 from background import Background
 from props import (
     Breeder,
     Building,
+    BuffetExit,
     FarmExit,
     FarmMerchant,
     MineExit,
@@ -54,6 +56,7 @@ in_mine = False
 in_tunnel = False
 in_farm = False
 in_ranch = False
+in_buffet = False
 current_tunnel = None
 save_menu = SaveMenu()
 
@@ -85,6 +88,8 @@ def reload_current_scene():
         enter_farm()
     elif in_ranch:
         enter_ranch()
+    elif in_buffet:
+        enter_buffet()
     else:
         reset_world()
     # 동물 카운트를 저장값에 맞춘다 (초과분 제거 + 부족분 배치)
@@ -173,9 +178,18 @@ def handle_events():
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
+            and in_buffet
+            and abs(player.x - buffet.EXIT[0]) <= 90
+            and player.y <= buffet.EXIT[1] + 140
+        ):
+            leave_buffet()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
             and not in_mine
             and not in_farm
             and not in_ranch
+            and not in_buffet
             and not in_tunnel
             and abs(player.x - 160) <= 50
         ):
@@ -187,6 +201,7 @@ def handle_events():
             and not in_mine
             and not in_farm
             and not in_ranch
+            and not in_buffet
             and abs(player.x - 480) <= 50
         ):
             enter_farm()
@@ -196,6 +211,7 @@ def handle_events():
             and not in_mine
             and not in_farm
             and not in_ranch
+            and not in_buffet
             and abs(player.x - 800) <= 50
         ):
             enter_ranch()
@@ -203,9 +219,20 @@ def handle_events():
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
             and not in_mine
+            and not in_buffet
             and abs(player.x - 1440) <= 50
         ):
             enter_mine()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and not in_mine
+            and not in_farm
+            and not in_ranch
+            and not in_buffet
+            and abs(player.x - 1120) <= 50
+        ):
+            enter_buffet()
         else:
             game_world.handle_event(event)
 
@@ -220,7 +247,12 @@ def update_world():
     if in_ranch and ranch.fence_blocked(player.x, player.y):
         # 울타리 통과 불가 (하단 중앙 게이트만 허용)
         player.x, player.y = previous_position
-    if in_farm or in_ranch:
+    if in_buffet:
+        # 입구가 설치된 y좌표보다 아래로 내려갈 수 없음 (뷔페_PRD 3.1 하단 입구)
+        if player.y < buffet.EXIT[1]:
+            player.y = buffet.EXIT[1]
+        camera.follow_2d(player.x, player.y)
+    elif in_farm or in_ranch:
         # 출구가 설치된 y좌표보다 위로 올라갈 수 없음
         exit_y = farm.EXIT[1] if in_farm else ranch.EXIT[1]
         if player.y > exit_y:
@@ -235,12 +267,13 @@ def _sprinkler_blocked(x, y):
 
 
 def reset_world():
-    global background, player, inventory, in_mine, in_tunnel, in_farm, in_ranch
+    global background, player, inventory, in_mine, in_tunnel, in_farm, in_ranch, in_buffet
 
     in_mine = False
     in_tunnel = False
     in_farm = False
     in_ranch = False
+    in_buffet = False
     game_world.clear()
     camera.restore_world()
     camera.reset()
@@ -427,6 +460,34 @@ def enter_ranch():
 def leave_ranch():
     reset_world()
     player.x = 800
+    player.y = 300
+    camera.follow(player.x)
+
+
+def enter_buffet():
+    global in_buffet
+
+    in_buffet = True
+    game_world.clear()
+    camera.reset()
+    camera.set_world(buffet.SIZE, buffet.SIZE)
+    background.use_buffet_map()
+    player.top_view = True
+    player.x = buffet.PLAYER_SPAWN[0]
+    player.y = buffet.PLAYER_SPAWN[1]
+    player.pressed_keys.clear()
+    if player.state == "RUN":
+        player.stop_running()
+    game_world.add_object(background, depth=0)
+    game_world.add_object(Hud(), depth=9)
+    game_world.add_object(BuffetExit(*buffet.EXIT), depth=1)
+    game_world.add_object(player, depth=2)
+    game_world.add_object(Inventory(player), depth=8)
+
+
+def leave_buffet():
+    reset_world()
+    player.x = 1120
     player.y = 300
     camera.follow(player.x)
 

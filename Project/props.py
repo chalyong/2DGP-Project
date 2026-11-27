@@ -124,6 +124,22 @@ class RanchExit:
         self.image.draw(self.x - camera.x, self.y - camera.y)
 
 
+class BuffetExit:
+    image = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        if BuffetExit.image is None:
+            BuffetExit.image = load_image("assets/buildings/buffet_exit.png")
+
+    def update(self):
+        pass
+
+    def draw(self):
+        self.image.draw(self.x - camera.x, self.y - camera.y)
+
+
 # ranch_shopkeeper.png: 균일 4프레임 64x64 아이들 시트
 RANCH_MERCHANT_FRAMES = (
     (0, 0, 64, 64),
