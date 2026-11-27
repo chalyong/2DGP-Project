@@ -36,6 +36,7 @@ from props import (
     BuffetShopkeeper,
     FarmExit,
     FarmMerchant,
+    KitchenDishes,
     MineExit,
     MineMerchant,
     RanchExit,
@@ -495,6 +496,7 @@ def enter_buffet():
     game_world.add_object(shopkeeper, depth=1)
     chef = BuffetChef(350, 700)  # 주방 구역 (뷔페_PRD 3.1)
     game_world.add_object(chef, depth=1)
+    game_world.add_object(KitchenDishes(), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(
         Shop(player, shopkeeper, pages=BUFFET_SHOP_PAGES, title="BUFFET SHOP"),

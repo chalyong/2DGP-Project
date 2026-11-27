@@ -1,5 +1,5 @@
 """장면 장식 오브젝트: 건물 외관·출입구·상인 (이미지 + 좌표 드로우)."""
-from pico2d import get_time, load_image
+from pico2d import get_time, load_font, load_image
 
 import camera
 import game_state
@@ -263,6 +263,45 @@ class BuffetChef:
             width,
             height,
         )
+
+
+class KitchenDishes:
+    """주방 요리 공간: 제작 성공분을 아이콘+수량으로 진열 (뷔페_PRD 3.3)."""
+
+    SPOTS = ((150, 650), (260, 650), (370, 650), (480, 650), (590, 650))
+    ICON_SIZE = 48
+
+    count_font = None
+
+    def __init__(self):
+        if KitchenDishes.count_font is None:
+            KitchenDishes.count_font = load_font(
+                r"C:\Windows\Fonts\consolab.ttf", 16
+            )
+
+    def update(self):
+        pass
+
+    def draw(self):
+        import shop
+
+        for (name, _), (x, y) in zip(game_state.RECIPES, self.SPOTS):
+            count = game_state.cooked_items.get(name, 0)
+            if count <= 0:
+                continue
+            shop.draw_item_icon(
+                name,
+                x - camera.x,
+                y - camera.y,
+                size=self.ICON_SIZE,
+                prefer_item=True,
+            )
+            KitchenDishes.count_font.draw(
+                x - camera.x + 26,
+                y - camera.y - 30,
+                f"x {count}",
+                (255, 224, 120),
+            )
 
 
 # 교배 전문가 (breeder_idle.png 균일 4프레임 64x64 — 보유 시에만 표시)
