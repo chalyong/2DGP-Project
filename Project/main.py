@@ -34,6 +34,7 @@ from props import (
     BuffetChef,
     BuffetExit,
     BuffetShopkeeper,
+    DiningFurniture,
     FarmExit,
     FarmMerchant,
     KitchenDishes,
@@ -497,6 +498,7 @@ def enter_buffet():
     chef = BuffetChef(350, 700)  # 주방 구역 (뷔페_PRD 3.1)
     game_world.add_object(chef, depth=1)
     game_world.add_object(KitchenDishes(), depth=1)
+    game_world.add_object(DiningFurniture(), depth=1)
     game_world.add_object(player, depth=2)
     game_world.add_object(
         Shop(player, shopkeeper, pages=BUFFET_SHOP_PAGES, title="BUFFET SHOP"),
@@ -587,7 +589,7 @@ if __name__ == "__main__":
     setup_fullscreen()
     start_background_music()
     reset_world()
-    enter_ranch()
+    enter_buffet()
     try:
         while running:
             handle_events()

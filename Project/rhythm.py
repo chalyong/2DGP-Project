@@ -20,8 +20,8 @@ FALL_SECONDS = 2.0  # 패널 상단 -> 히트라인 낙하 시간
 NOTE_LINGER_SECONDS = 0.35  # 히트라인 통과 후 제거 대기
 PERFECT_WINDOW = 0.12  # 히트라인 ±초: PERFECT -> 2개 제작
 GOOD_WINDOW = 0.30  # 히트라인 ±초: GOOD -> 1개 제작
-NOTE_SIZE = 44
-FRAME_SIZE = 66
+NOTE_FRAME_SIZE = 52  # 노트 = 리듬 프레임 + 그 위 요리 아이콘
+NOTE_ICON_SIZE = 30
 HIT_RATIO = 0.16  # 패널 하단 기준 히트라인 높이
 
 
@@ -130,26 +130,23 @@ class RhythmGame:
             PANEL_WIDTH,
             PANEL_HEIGHT,
         )
-        # 히트라인: 노랑 선은 이미지 수직 중앙
+        # 히트라인: 노랑 선은 이미지 수직 중앙 (판정선 위에는 프레임을 그리지 않음)
         hit_height = int(230 * PANEL_WIDTH / 381)
         RhythmGame.hitline.draw(
             PANEL_CENTER_X, hit_y, PANEL_WIDTH, hit_height
         )
-        # 레인별 타깃 카드
-        for lane in range(LANE_COUNT):
-            RhythmGame.frame.draw(
-                int(self.lane_x(lane)), hit_y, FRAME_SIZE, FRAME_SIZE
-            )
-        # 낙하 노트 (요리 아이콘)
+        # 낙하 노트: 리듬 프레임 위에 요리 아이콘을 얹어 내려옴
         now = get_time()
         for note in self.active:
             ratio = min((now - note["spawned_at"]) / FALL_SECONDS, 1.0)
-            y = top - (top - hit_y) * ratio
+            y = int(top - (top - hit_y) * ratio)
+            x = int(self.lane_x(note["lane"]))
+            RhythmGame.frame.draw(x, y, NOTE_FRAME_SIZE, NOTE_FRAME_SIZE)
             shop.draw_item_icon(
                 note["name"],
-                int(self.lane_x(note["lane"])),
-                int(y),
-                size=NOTE_SIZE,
+                x,
+                y,
+                size=NOTE_ICON_SIZE,
                 prefer_item=True,
             )
         # 레인키 안내와 판정 피드백
@@ -161,7 +158,7 @@ class RhythmGame:
                 label,
                 (200, 205, 215),
             )
-        if now - self.last_label_time < 0.6:
+        if self.last_label and now - self.last_label_time < 0.6:
             color = (255, 224, 120) if "PERFECT" in self.last_label else (235, 235, 235)
             RhythmGame.error_font.draw(
                 400, hit_y + 70, self.last_label, color

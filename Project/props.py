@@ -304,6 +304,55 @@ class KitchenDishes:
             )
 
 
+class DiningFurniture:
+    """식사 공간: 구매한 식탁·의자를 맵에 배치 (뷔페_PRD 3.2).
+
+    식탁당 의자 2개를 좌우에 붙인다 (식탁 구매 규칙상 항상 식탁이 먼저 확보된다).
+    """
+
+    TABLE_SPOTS = ((200, 350), (440, 350), (680, 350), (320, 210), (560, 210))
+    CHAIR_OFFSET = 56
+    MAX_TABLES = len(TABLE_SPOTS)
+    MAX_CHAIRS = MAX_TABLES * 2
+
+    table_image = None
+    chair_image = None
+
+    def __init__(self):
+        if DiningFurniture.table_image is None:
+            DiningFurniture.table_image = load_image(
+                "assets/buildings/buffet_table.png"
+            )
+        if DiningFurniture.chair_image is None:
+            DiningFurniture.chair_image = load_image(
+                "assets/buildings/buffet_chair.png"
+            )
+
+    def update(self):
+        pass
+
+    def draw(self):
+        tables = min(
+            game_state.buffet_facilities.get("table", 0),
+            self.MAX_TABLES,
+        )
+        chairs = min(
+            game_state.buffet_facilities.get("chair", 0),
+            self.MAX_CHAIRS,
+        )
+        for index in range(tables):
+            tx, ty = self.TABLE_SPOTS[index]
+            DiningFurniture.table_image.draw(tx - camera.x, ty - camera.y)
+        for chair_index in range(chairs):
+            table_index = chair_index // 2
+            tx, ty = self.TABLE_SPOTS[table_index]
+            side = -1 if chair_index % 2 == 0 else 1
+            DiningFurniture.chair_image.draw(
+                tx + side * self.CHAIR_OFFSET - camera.x,
+                ty - camera.y,
+            )
+
+
 # 교배 전문가 (breeder_idle.png 균일 4프레임 64x64 — 보유 시에만 표시)
 class Breeder:
     image = None

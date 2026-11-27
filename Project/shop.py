@@ -208,7 +208,7 @@ def item_image(name, prefer_item=False):
     # prefer_item: ???? ?? ?? ? assets/item/{??}.png ??
     # (chicken? ??=?? ??, ????=??? ??? ???)
     if prefer_item:
-        item_path = f"assets/item/{name.lower()}.png"
+        item_path = f"assets/item/{name.lower().replace(' ', '_')}.png"
         if os.path.exists(item_path):
             return item_path, None
     """?곹뭹/?꾩씠?쒕챸???대떦?섎뒗 (?대?吏 寃쎈줈, ?щ∼ 醫뚰몴 or None)."""
