@@ -32,6 +32,7 @@ from props import (
     Breeder,
     Building,
     BuffetExit,
+    BuffetShopkeeper,
     FarmExit,
     FarmMerchant,
     MineExit,
@@ -46,7 +47,14 @@ from auto_npc import Miner
 from farm import FarmZone
 from player import Player
 from hud import Hud
-from shop import FARM_SELL_PAGES, FARM_SHOP_PAGES, RANCH_SELL_PAGES, RANCH_SHOP_PAGES, Shop
+from shop import (
+    BUFFET_SHOP_PAGES,
+    FARM_SELL_PAGES,
+    FARM_SHOP_PAGES,
+    RANCH_SELL_PAGES,
+    RANCH_SHOP_PAGES,
+    Shop,
+)
 from inventory import Inventory
 from save_menu import SaveMenu
 
@@ -481,7 +489,13 @@ def enter_buffet():
     game_world.add_object(background, depth=0)
     game_world.add_object(Hud(), depth=9)
     game_world.add_object(BuffetExit(*buffet.EXIT), depth=1)
+    shopkeeper = BuffetShopkeeper(620, 540)  # 계산대 구역 (뷔페_PRD 3.1)
+    game_world.add_object(shopkeeper, depth=1)
     game_world.add_object(player, depth=2)
+    game_world.add_object(
+        Shop(player, shopkeeper, pages=BUFFET_SHOP_PAGES, title="BUFFET SHOP"),
+        depth=8,
+    )
     game_world.add_object(Inventory(player), depth=8)
 
 

@@ -77,6 +77,9 @@ ANIMAL_LIMIT_PER_ZONE = 10
 # 교배 전문가 보유 여부 — 구역별 1명 (목장_PRD 3.6/3.7)
 breeders = {"chicken": False, "cow": False, "pig": False}
 
+# 뷔페 시설 보유 수량 (뷔페_PRD 3.2 — b5 선행 규칙의 기준)
+buffet_facilities = {"chair": 0, "table": 0, "decor": 0}
+
 # 농사지: 구역 해금 상태와 심은 작물
 # crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
 farm_unlocked = {
@@ -209,6 +212,7 @@ def save_game(slot=1, name=""):
         "animal_counts": dict(animal_counts),
         "hunting_knives": hunting_knives,
         "breeders": dict(breeders),
+        "buffet_facilities": dict(buffet_facilities),
         "farm_unlocked": dict(farm_unlocked),
         # 상대시각(get_time 프로세스 기준)은 "경과 초"로 저장해 이식성 유지
         "play_elapsed": now - play_start_time,
@@ -266,6 +270,8 @@ def load_game(slot=1):
     hunting_knives = state.get("hunting_knives", 0)
     breeders.clear()
     breeders.update(state.get("breeders", breeders))
+    buffet_facilities.clear()
+    buffet_facilities.update(state.get("buffet_facilities", buffet_facilities))
     farm_unlocked.clear()
     farm_unlocked.update(state.get("farm_unlocked", farm_unlocked))
     play_start_time = now - state.get("play_elapsed", 0)

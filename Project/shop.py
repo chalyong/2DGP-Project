@@ -490,6 +490,8 @@ class Shop:
             auto_npc.hire_manager(target)
         elif kind == "breeder":
             game_state.breeders[target] = True
+        elif kind == "buffet_facility":
+            game_state.buffet_facilities[target] += 1
         self.message = f"PURCHASED {name}"
         self.message_time = get_time()
 
