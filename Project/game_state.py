@@ -78,7 +78,9 @@ ANIMAL_LIMIT_PER_ZONE = 10
 breeders = {"chicken": False, "cow": False, "pig": False}
 
 # 뷔페 시설 보유 수량 (뷔페_PRD 3.2 — b5 선행 규칙의 기준)
-buffet_facilities = {"chair": 0, "table": 0, "decor": 0}
+# 시작 시설: 식탁 1, 의자 2. 식탁=보유 의자 ≥ 식탁×2, 의자=빈자리(의자 < 식탁×2) 존재
+BUFFET_FACILITIES_START = {"chair": 2, "table": 1, "decor": 0}
+buffet_facilities = dict(BUFFET_FACILITIES_START)
 
 # 농사지: 구역 해금 상태와 심은 작물
 # crop_slots 키: (작물, 칸 인덱스) -> 심은 시각(get_time())
@@ -271,7 +273,9 @@ def load_game(slot=1):
     breeders.clear()
     breeders.update(state.get("breeders", breeders))
     buffet_facilities.clear()
-    buffet_facilities.update(state.get("buffet_facilities", buffet_facilities))
+    buffet_facilities.update(
+        state.get("buffet_facilities") or BUFFET_FACILITIES_START
+    )
     farm_unlocked.clear()
     farm_unlocked.update(state.get("farm_unlocked", farm_unlocked))
     play_start_time = now - state.get("play_elapsed", 0)

@@ -455,6 +455,18 @@ class Shop:
                 self.message = f"{target.upper()} BREEDER LIMIT (1)"
                 self.message_time = get_time()
                 return
+        if kind == "buffet_facility":
+            # 식탁 우선 교대 구매 (뷔페_PRD 3.2): 식탁=의자 2배 확보, 의자=빈자리 존재
+            chairs = game_state.buffet_facilities["chair"]
+            tables = game_state.buffet_facilities["table"]
+            if target == "table" and chairs < tables * 2:
+                self.message = "BUY 2 MORE CHAIRS FIRST"
+                self.message_time = get_time()
+                return
+            if target == "chair" and chairs >= tables * 2:
+                self.message = "BUY TABLE FIRST"
+                self.message_time = get_time()
+                return
         if game_state.money < price:
             self.message = "NOT ENOUGH MONEY"
             self.message_time = get_time()
