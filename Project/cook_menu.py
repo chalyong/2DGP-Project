@@ -99,24 +99,88 @@ class CookMenu:
                     continue
                 quantity = self.quantities.get(name, 0)
                 if 430 <= x < 465:
-                    self.quantities[name] = max(0, quantity - 1)
+                    self._set_quantity(name, quantity - 1)
                     return
                 if 500 <= x < 535:
-                    self.quantities[name] = quantity + 1
+                    self._set_quantity(name, quantity + 1)
                     return
                 if 545 <= x < 610:
-                    self.quantities[name] = self._max_quantity(groups)
+                    self._set_quantity(name, self._max_feasible(name))
                     return
 
-    def _max_quantity(self, groups):
-        """현재 재료로 만들 수 있는 최대 수량."""
-        limit = None
-        for group in groups:
-            available = sum(
+    def _recipe_groups(self, name):
+        for recipe_name, groups in game_state.RECIPES:
+            if recipe_name == name:
+                return groups
+        return ()
+
+    def _requests_with(self, name, quantity):
+        """이 요리의 수량을 quantity로 바꾼 전체 요청 목록."""
+        proposed = dict(self.quantities)
+        proposed[name] = quantity
+        return [(n, q) for n, q in proposed.items() if q > 0]
+
+    def _feasible(self, name, quantity):
+        """다른 요리의 요청분까지 포함해 재료로 전량 공급 가능해야 수량 변경 허용."""
+        return game_state.can_supply(self._requests_with(name, quantity))
+
+    def _set_quantity(self, name, quantity):
+        """수량 변경: 공급 가능할 때만 적용 — 한도에서의 +1은 무시된다."""
+        if quantity < 0:
+            return
+        if self._feasible(name, quantity):
+            self.quantities[name] = quantity
+
+    def _max_feasible(self, name):
+        """다른 요청분을 제외하고 이 요리에 줄 수 있는 최대 수량 (MAX 버튼)."""
+        bound = None
+        for group in self._recipe_groups(name):
+            total = sum(
                 game_state.collected_items.get(key, 0) for key in group
             )
-            limit = available if limit is None else min(limit, available)
-        return max(0, limit or 0)
+            bound = total if bound is None else min(bound, total)
+        if bound is None:
+            return 0
+        low = self.quantities.get(name, 0)  # 현재 값은 항상 공급 가능(불변식)
+        high = bound + 1  # 항상 불가능한 쪽
+        while low + 1 < high:
+            mid = (low + high) // 2
+            if self._feasible(name, mid):
+                low = mid
+            else:
+                high = mid
+        return low
+
+    def _total_cost(self):
+        """현재 요청의 재료별 총 소비량 (요리 간 공유 재료 반영)."""
+        requests = [
+            (n, q) for n, q in self.quantities.items() if q > 0
+        ]
+        ok, cost = game_state.simulate_consume(requests)
+        return cost if ok else None
+
+    def _draw_cost(self):
+        cost = self._total_cost()
+        if not cost:
+            return
+        parts = [
+            f"{key.upper()} {value}"
+            for key, value in cost.items()
+            if value > 0
+        ]
+        lines, current = [], ""
+        for part in parts:
+            candidate = f"{current} · {part}" if current else part
+            if len(candidate) > 58 and current:
+                lines.append(current)
+                current = part
+            else:
+                current = candidate
+        if current:
+            lines.append(current)
+        for index, line in enumerate(lines[:2]):
+            text = f"COST  {line}" if index == 0 else line
+            self.detail_font.draw(110, 166 - index * 16, text, (200, 205, 215))
 
     def _submit(self):
         """요청 수량만큼 제작 (뷔페_PRD 3.3): 전량 검증 후 소비, 부족분은 오류 표시."""
@@ -227,7 +291,8 @@ class CookMenu:
             self.item_font.draw(640, y, f"x {cooked}", (255, 224, 120))
 
         if self.message:
-            self.item_font.draw(300, 170, self.message, (255, 150, 120))
+            self.item_font.draw(300, 430, self.message, (255, 150, 120))
+        self._draw_cost()
         total = sum(self.quantities.values())
         cook_color = (255, 224, 120) if total else (140, 150, 165)
         self.item_font.draw(340, 128, f"[ COOK x{total} ]", cook_color)

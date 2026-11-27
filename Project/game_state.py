@@ -6,19 +6,19 @@ import farm
 money = 1000000
 play_start_time = get_time()
 collected_items = {
-    "stone": 0,
-    "coal": 0,
-    "iron": 0,
-    "gold": 0,
-    "wheat": 0,
-    "potato": 0,
-    "strawberry": 0,
-    "egg": 0,
-    "milk": 0,
-    "mushroom": 0,
-    "chicken": 0,
-    "beef": 0,
-    "pork": 0,
+    "stone": 100,
+    "coal": 100,
+    "iron": 100,
+    "gold": 100,
+    "wheat": 100,
+    "potato": 100,
+    "strawberry": 100,
+    "egg": 100,
+    "milk": 100,
+    "mushroom": 100,
+    "chicken": 100,
+    "beef": 100,
+    "pork": 100,
 }
 cooked_items = {}
 
@@ -31,6 +31,42 @@ RECIPES = (
     ("MUSHROOM SOUP", (("mushroom",), ("milk",))),
     ("STEAK", (("chicken", "beef", "pork"), ("potato",))),
 )
+
+
+def simulate_consume(requests):
+    """요청 목록 ((이름, 수량), ...)을 현재 재료로 소비하는 시뮬레이션.
+
+    실제 소비는 하지 않는다. (성공 여부, 재료별 총 소비량 {키: 양}) 반환.
+    """
+    stock = dict(collected_items)
+    cost = {}
+    for name, qty in requests:
+        groups = None
+        for recipe_name, recipe_groups in RECIPES:
+            if recipe_name == name:
+                groups = recipe_groups
+                break
+        if not groups or qty <= 0:
+            continue
+        for group in groups:
+            if sum(stock.get(key, 0) for key in group) < qty:
+                return False, None
+        for group in groups:
+            remaining = qty
+            for key in group:
+                take = min(stock.get(key, 0), remaining)
+                stock[key] -= take
+                cost[key] = cost.get(key, 0) + take
+                remaining -= take
+                if remaining == 0:
+                    break
+    return True, cost
+
+
+def can_supply(requests):
+    """요청 목록이 현재 재료로 전량 공급 가능한지 (소비하지 않음)."""
+    ok, _ = simulate_consume(requests)
+    return ok
 
 
 def consume_ingredients(name, count=1):
