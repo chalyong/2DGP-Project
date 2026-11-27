@@ -38,6 +38,8 @@ class SaveMenu:
         self.message_time = -10.0
         self.on_load = None  # 로드 성공 콜백 (main.reload_current_scene)
 
+    def _ensure_assets(self):
+        """캔버스 오픈 이후에 에셋 로드 (임포트 시점에는 renderer가 없음)."""
         if SaveMenu.panel is None:
             SaveMenu.panel = load_image("assets/ui/shop_panel.png")
             SaveMenu.title_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 28)
@@ -153,6 +155,7 @@ class SaveMenu:
     def draw(self):
         if not self.open:
             return
+        self._ensure_assets()
 
         self.panel.draw_to_origin(40, 100)
         self.title_font.draw(270, 455, "SAVE / LOAD", (255, 239, 177))
