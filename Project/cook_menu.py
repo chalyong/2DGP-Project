@@ -30,6 +30,7 @@ class CookMenu:
         self.open = False
         self.page = 0
         self.page_change_time = -0.2
+        self.quantities = {}  # 레시피명 -> 요청 수량 (페이지를 넘어 유지)
         self.message = None
         self.message_time = -2.0
         if CookMenu.panel is None:
@@ -54,6 +55,7 @@ class CookMenu:
             self.player.set_movement_locked(self.open)
             if not self.open:
                 self.page = 0
+                self.quantities.clear()
         elif (
             event.type == SDL_MOUSEWHEEL
             and self.open
@@ -76,17 +78,53 @@ class CookMenu:
         ):
             x = event.x
             y = camera.SCREEN_HEIGHT - event.y
+            if 300 <= x < 520 and 110 <= y <= 150:
+                self._submit()
+                return
             rows = list(game_state.RECIPES)
             start = self.page * self.ITEMS_PER_PAGE
             for index, (name, groups) in enumerate(
                 rows[start : start + self.ITEMS_PER_PAGE]
             ):
                 row_y = self.ROW_Y0 - index * self.ROW_SPACING
-                if 100 <= x < 700 and row_y - 40 <= y <= row_y + 20:
-                    ok, message = game_state.cook(name)
-                    self.message = message
-                    self.message_time = get_time()
+                if not row_y - 40 <= y <= row_y + 20:
+                    continue
+                quantity = self.quantities.get(name, 0)
+                if 430 <= x < 465:
+                    self.quantities[name] = max(0, quantity - 1)
                     return
+                if 500 <= x < 535:
+                    self.quantities[name] = quantity + 1
+                    return
+                if 545 <= x < 610:
+                    self.quantities[name] = self._max_quantity(groups)
+                    return
+
+    def _max_quantity(self, groups):
+        """현재 재료로 만들 수 있는 최대 수량."""
+        limit = None
+        for group in groups:
+            available = sum(
+                game_state.collected_items.get(key, 0) for key in group
+            )
+            limit = available if limit is None else min(limit, available)
+        return max(0, limit or 0)
+
+    def _submit(self):
+        """요청 내역 표시 (b8에서 재료 검증 후 수량만큼 제작으로 교체)."""
+        requests = [
+            (name, quantity)
+            for name, quantity in self.quantities.items()
+            if quantity > 0
+        ]
+        if not requests:
+            self.message = "SET QUANTITY FIRST"
+        else:
+            summary = ", ".join(
+                f"{name} x{quantity}" for name, quantity in requests
+            )
+            self.message = f"REQ: {summary}"
+        self.message_time = get_time()
 
     def _page_count(self):
         return max(
@@ -105,7 +143,12 @@ class CookMenu:
 
         self.page = min(self.page, self._page_count() - 1)
         self.panel.draw_to_origin(40, 100)
-        self.title_font.draw(300, 455, "COOKING", (255, 239, 177))
+        self.title_font.draw(
+            300,
+            455,
+            f"COOKING  {self.page + 1}/{self._page_count()}",
+            (255, 239, 177),
+        )
 
         rows = list(game_state.RECIPES)
         start = self.page * self.ITEMS_PER_PAGE
@@ -115,17 +158,22 @@ class CookMenu:
             y = self.ROW_Y0 - index * self.ROW_SPACING
             shop.draw_item_icon(name, 120, y, prefer_item=True)
             self.item_font.draw(165, y, name, (235, 235, 235))
-            cooked = game_state.cooked_items.get(name, 0)
-            self.item_font.draw(600, y, f"x {cooked}", (255, 224, 120))
             ingredients = " + ".join(
                 "/".join(key.upper() for key in group) for group in groups
             )
             self.description_font.draw(165, y - 20, ingredients, (180, 190, 205))
+            quantity = self.quantities.get(name, 0)
+            quantity_color = (255, 224, 120) if quantity else (140, 150, 165)
+            self.item_font.draw(440, y, "-", (235, 235, 235))
+            self.item_font.draw(470, y, str(quantity), quantity_color)
+            self.item_font.draw(510, y, "+", (235, 235, 235))
+            self.description_font.draw(550, y, "MAX", (180, 190, 205))
+            cooked = game_state.cooked_items.get(name, 0)
+            self.item_font.draw(640, y, f"x {cooked}", (255, 224, 120))
 
         if self.message:
             self.item_font.draw(300, 170, self.message, (255, 150, 120))
-        self.detail_font.draw(300, 130, "SPACE: CLOSE", (180, 190, 205))
-        if self._page_count() > 1:
-            self.detail_font.draw(
-                640, 130, f"{self.page + 1}/{self._page_count()}", (180, 190, 205)
-            )
+        total = sum(self.quantities.values())
+        cook_color = (255, 224, 120) if total else (140, 150, 165)
+        self.item_font.draw(340, 128, f"[ COOK x{total} ]", cook_color)
+        self.detail_font.draw(110, 128, "SPACE: CLOSE", (180, 190, 205))
