@@ -11,6 +11,7 @@ from sdl2 import (
 import camera
 import game_state
 import shop
+from rhythm import RhythmGame
 
 
 class CookMenu:
@@ -31,6 +32,7 @@ class CookMenu:
         self.page = 0
         self.page_change_time = -0.2
         self.quantities = {}  # 레시피명 -> 요청 수량 (페이지를 넘어 유지)
+        self.rhythm = None  # 제작 요청 시 열리는 리듬게임 (rhythm.RhythmGame)
         self.message = None
         self.message_time = -2.0
         if CookMenu.panel is None:
@@ -126,15 +128,24 @@ class CookMenu:
         for name, quantity in requests:
             ok, detail = game_state.cook(name, quantity)
             if ok:
-                cooked.append(f"{name} x{quantity}")
+                cooked.append((name, quantity))
             elif detail not in failed:
                 failed.append(detail)
         if failed:
             # 오류 상태 우선 표시 (PRD: 부족한 요리는 제작되지 않음)
             self.message = " / ".join(failed)
         else:
-            self.message = "COOKED " + ", ".join(cooked)
+            self.message = "COOKED " + ", ".join(
+                f"{name} x{quantity}" for name, quantity in cooked
+            )
         self.message_time = get_time()
+        if cooked:
+            # 리듬게임 판으로 이어감 (b9: 표시·낙하, b10: 판정·보상)
+            self.rhythm = RhythmGame(cooked, failed)
+            self.open = False
+            self.player.set_movement_locked(False)
+            self.page = 0
+            self.quantities.clear()
 
     def _page_count(self):
         return max(
@@ -146,11 +157,18 @@ class CookMenu:
     def update(self):
         if self.message and get_time() - self.message_time >= 1.5:
             self.message = None
+        if self.rhythm is not None:
+            self.rhythm.update()
+            if self.rhythm.done:
+                self.rhythm = None
 
     def draw(self):
-        if not self.open:
-            return
+        if self.open:
+            self._draw_panel()
+        if self.rhythm is not None:
+            self.rhythm.draw()
 
+    def _draw_panel(self):
         self.page = min(self.page, self._page_count() - 1)
         self.panel.draw_to_origin(40, 100)
         self.title_font.draw(
