@@ -46,6 +46,7 @@ from player import Player
 from hud import Hud
 from shop import FARM_SELL_PAGES, FARM_SHOP_PAGES, RANCH_SELL_PAGES, RANCH_SHOP_PAGES, Shop
 from inventory import Inventory
+from save_menu import SaveMenu
 
 
 running = True
@@ -54,6 +55,7 @@ in_tunnel = False
 in_farm = False
 in_ranch = False
 current_tunnel = None
+save_menu = SaveMenu()
 
 ENTRANCES = (
     (486, "stone"),
@@ -92,6 +94,10 @@ def reload_current_scene():
     auto_npc.ensure_animal_population()
 
 
+# 저장 메뉴 로드 성공 시 현재 씬 재구성
+save_menu.on_load = reload_current_scene
+
+
 def handle_events():
     global running
 
@@ -99,7 +105,12 @@ def handle_events():
         if event.type == SDL_QUIT:
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
-            running = False
+            if save_menu.open:
+                save_menu.close(player)
+            else:
+                running = False
+        elif save_menu.open:
+            save_menu.handle_event(event, player)
         elif event.type == SDL_KEYDOWN and event.key == SDLK_F5:
             ok, msg = game_state.save_game(1)
             print(msg)
@@ -159,6 +170,17 @@ def handle_events():
             and player.y >= ranch.EXIT[1] - 140
         ):
             leave_ranch()
+        elif (
+            event.type == SDL_KEYDOWN
+            and event.key == SDLK_SPACE
+            and not in_mine
+            and not in_farm
+            and not in_ranch
+            and not in_tunnel
+            and abs(player.x - 160) <= 50
+        ):
+            # 집 앞: 저장·불러오기 메뉴 (PRD 9단계)
+            save_menu.open_menu(player)
         elif (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -435,6 +457,7 @@ def render_world():
     else:
         clear_canvas()
     game_world.render()
+    save_menu.draw()
     update_canvas()
 
 

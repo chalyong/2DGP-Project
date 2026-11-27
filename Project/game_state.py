@@ -190,13 +190,14 @@ def _slot_path(slot):
     return os.path.join(SAVE_DIR, f"slot_{slot}.json")
 
 
-def save_game(slot=1):
+def save_game(slot=1, name=""):
     """현재 상태를 JSON 슬롯에 저장. (성공, 메시지) 반환."""
     if not 1 <= slot <= 5:
         return False, "SLOT ERROR"
     now = get_time()
     state = {
         "version": SAVE_VERSION,
+        "name": name[:12],
         "money": money,
         "collected_items": dict(collected_items),
         "cooked_items": dict(cooked_items),
@@ -280,3 +281,32 @@ def load_game(slot=1):
         }
     miner_cycle_count = state.get("miner_cycle_count", 0)
     return True, f"LOADED SLOT {slot}"
+
+
+def list_saves():
+    """슬롯 목록 조회. [(slot, name_or_None), ...] — 5슬롯 전체."""
+    result = []
+    for slot in range(1, 6):
+        path = _slot_path(slot)
+        name = None
+        if os.path.exists(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+                name = data.get("name") or "( unnamed )" if isinstance(data, dict) else None
+            except (json.JSONDecodeError, OSError):
+                name = "(CORRUPT)"
+        result.append((slot, name))
+    return result
+
+
+def delete_save(slot):
+    """슬롯 삭제. (성공, 메시지) 반환."""
+    path = _slot_path(slot)
+    if not os.path.exists(path):
+        return False, f"NO SAVE SLOT {slot}"
+    try:
+        os.remove(path)
+    except OSError:
+        return False, "DELETE FAILED"
+    return True, f"DELETED SLOT {slot}"
