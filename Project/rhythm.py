@@ -53,6 +53,12 @@ class RhythmGame:
         self.next_spawn_at = get_time() + SPAWN_MIN_SECONDS
         self.last_label = None  # 판정 피드백 ("PERFECT +2" 등)
         self.last_label_time = -2.0
+        self.combo = 0
+        self.max_combo = 0
+        self.perfect_count = 0
+        self.good_count = 0
+        self.miss_count = 0
+        self.awards = {}  # 레시피명 -> 리듬게임에서 지급한 수량
 
     def _progress(self, now):
         """난이도 진행도 0~1 (시작 후 SPAWN_RAMP_SECONDS까지 1)."""
@@ -94,10 +100,25 @@ class RhythmGame:
         self.active.remove(best)
         award = 2 if best_delta <= PERFECT_WINDOW else 1
         game_state.award_dish(best["name"], award)
+        self.combo += 1
+        self.max_combo = max(self.max_combo, self.combo)
+        if award == 2:
+            self.perfect_count += 1
+        else:
+            self.good_count += 1
+        self.awards[best["name"]] = self.awards.get(best["name"], 0) + award
         self.last_label = (
             f"PERFECT +{award}" if award == 2 else f"GOOD +{award}"
         )
         self.last_label_time = now
+
+    @property
+    def summary(self):
+        """종료 요약: 판정 집계와 최대 콤보."""
+        return (
+            f"PERFECT {self.perfect_count} / GOOD {self.good_count} "
+            f"/ MISS {self.miss_count}   MAX COMBO {self.max_combo}"
+        )
 
     @property
     def done(self):
@@ -137,11 +158,17 @@ class RhythmGame:
             )
             low, high = self.spawn_interval_range(progress)
             self.next_spawn_at = now + random.uniform(low, high)
-        self.active = [
-            note
-            for note in self.active
-            if now - note["spawned_at"] <= FALL_SECONDS + NOTE_LINGER_SECONDS
-        ]
+        remaining = []
+        for note in self.active:
+            if now - note["spawned_at"] <= FALL_SECONDS + NOTE_LINGER_SECONDS:
+                remaining.append(note)
+            else:
+                # 판정 창을 지나간 노트 = MISS: 콤보 끊김, 요리획득 없음
+                self.miss_count += 1
+                self.combo = 0
+                self.last_label = "MISS"
+                self.last_label_time = now
+        self.active = remaining
 
     def draw(self):
         top = self.panel_bottom + PANEL_HEIGHT
@@ -181,10 +208,30 @@ class RhythmGame:
                 (200, 205, 215),
             )
         if self.last_label and now - self.last_label_time < 0.6:
-            color = (255, 224, 120) if "PERFECT" in self.last_label else (235, 235, 235)
+            if self.last_label == "MISS":
+                color = (255, 90, 90)
+            elif "PERFECT" in self.last_label:
+                color = (255, 224, 120)
+            else:
+                color = (235, 235, 235)
+            text = self.last_label
             RhythmGame.error_font.draw(
-                400, hit_y + 70, self.last_label, color
+                400 - int(len(text) * 4.5), hit_y + 70, text, color
             )
+        if self.combo >= 2:
+            combo_text = f"COMBO x{self.combo}"
+            RhythmGame.error_font.draw(
+                400 - int(len(combo_text) * 4.5),
+                hit_y + 95,
+                combo_text,
+                (255, 224, 120),
+            )
+        stats = (
+            f"P {self.perfect_count}   G {self.good_count}   M {self.miss_count}"
+        )
+        RhythmGame.error_font.draw(
+            400 - int(len(stats) * 4.5), 530, stats, (200, 205, 215)
+        )
         if self.errors:
             RhythmGame.error_font.draw(
                 400, 578, " / ".join(self.errors), (255, 150, 120)

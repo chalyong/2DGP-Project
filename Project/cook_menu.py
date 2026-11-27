@@ -13,6 +13,8 @@ import game_state
 import shop
 from rhythm import RhythmGame
 
+TOAST_SECONDS = 3.0  # 요리 완료 월드 알림 표시 시간
+
 
 class CookMenu:
     panel = None
@@ -33,6 +35,8 @@ class CookMenu:
         self.page_change_time = -0.2
         self.quantities = {}  # 레시피명 -> 요청 수량 (페이지를 넘어 유지)
         self.rhythm = None  # 제작 요청 시 열리는 리듬게임 (rhythm.RhythmGame)
+        self.toast_lines = []  # 리듬게임 종료 요약 월드 알림
+        self.toast_time = -2.0
         self.message = None
         self.message_time = -2.0
         if CookMenu.panel is None:
@@ -144,6 +148,7 @@ class CookMenu:
         if cooked:
             # 리듬게임 판으로 이어감 (b9: 표시·낙하, b10: 판정·보상)
             self.rhythm = RhythmGame(cooked, failed)
+            self.toast_lines = []
             self.open = False
             self.player.set_movement_locked(False)
             self.page = 0
@@ -162,13 +167,33 @@ class CookMenu:
         if self.rhythm is not None:
             self.rhythm.update()
             if self.rhythm.done:
+                self._show_toast(self.rhythm)
                 self.rhythm = None
+
+    def _show_toast(self, rhythm):
+        """리듬게임 종료 요약과 획득량을월드 알림으로 표시 (PRD 3.3)."""
+        awards = ", ".join(
+            f"{name} x{count}" for name, count in rhythm.awards.items()
+        )
+        self.toast_lines = [
+            f"COOKED {awards}" if awards else "NO DISHES",
+            rhythm.summary,
+        ]
+        self.toast_time = get_time()
 
     def draw(self):
         if self.open:
             self._draw_panel()
         if self.rhythm is not None:
             self.rhythm.draw()
+        if self.toast_lines and get_time() - self.toast_time < TOAST_SECONDS:
+            line1, line2 = self.toast_lines
+            self.item_font.draw(
+                400 - int(len(line1) * 5.5), 545, line1, (255, 224, 120)
+            )
+            self.detail_font.draw(
+                400 - int(len(line2) * 4.5), 518, line2, (235, 235, 235)
+            )
 
     def _draw_panel(self):
         self.page = min(self.page, self._page_count() - 1)
