@@ -13,12 +13,15 @@ PANEL_WIDTH = 340
 PANEL_HEIGHT = 530
 LANE_COUNT = 4
 LANE_KEYS = (SDLK_d, SDLK_f, SDLK_j, SDLK_k)  # 레인 0~3 키
-SPAWN_MIN_SECONDS = 0.5
-SPAWN_MAX_SECONDS = 1.0
-MAX_ACTIVE_NOTES = 2
-FALL_SECONDS = 2.0  # 패널 상단 -> 히트라인 낙하 시간
+SPAWN_MIN_SECONDS = 0.5  # 시작 등장 간격(하한)
+SPAWN_MAX_SECONDS = 1.0  # 시작 등장 간격(상한)
+SPAWN_FLOOR_SECONDS = 0.2  # 시간이 지날수록 이 값까지 빨라짐 (노트 등장 속도)
+SPAWN_RAMP_SECONDS = 30.0  # 시작 간격 -> 0.2초까지 감소하는 데 걸리는 시간
+MAX_ACTIVE_NOTES = 2  # 시작 동시 노트 상한
+MAX_ACTIVE_RAMP = 10  # 램프 동안 추가되는 상한 (2 -> 12)
+FALL_SECONDS = 2.0  # 패널 상단 -> 히트라인 낙하 시간 (속도는 불변)
 NOTE_LINGER_SECONDS = 0.35  # 히트라인 통과 후 제거 대기
-PERFECT_WINDOW = 0.12  # 히트라인 ±초: PERFECT -> 2개 제작
+PERFECT_WINDOW = 0.05  # 히트라인 ±초: PERFECT -> 2개 제작
 GOOD_WINDOW = 0.30  # 히트라인 ±초: GOOD -> 1개 제작
 NOTE_FRAME_SIZE = 52  # 노트 = 리듬 프레임 + 그 위 요리 아이콘
 NOTE_ICON_SIZE = 30
@@ -46,9 +49,28 @@ class RhythmGame:
         self.queue = queue
         self.active = []  # {"name", "lane", "spawned_at"}
         self.errors = list(errors)
+        self.started_at = get_time()
         self.next_spawn_at = get_time() + SPAWN_MIN_SECONDS
         self.last_label = None  # 판정 피드백 ("PERFECT +2" 등)
         self.last_label_time = -2.0
+
+    def _progress(self, now):
+        """난이도 진행도 0~1 (시작 후 SPAWN_RAMP_SECONDS까지 1)."""
+        return min(1.0, (now - self.started_at) / SPAWN_RAMP_SECONDS)
+
+    def spawn_interval_range(self, progress):
+        """현재 진행도의 등장 간격 (min, max) — progress 1에서 0.2~0.2초."""
+        low = SPAWN_MIN_SECONDS + (
+            SPAWN_FLOOR_SECONDS - SPAWN_MIN_SECONDS
+        ) * progress
+        high = SPAWN_MAX_SECONDS + (
+            SPAWN_FLOOR_SECONDS - SPAWN_MAX_SECONDS
+        ) * progress
+        return low, high
+
+    def max_active(self, progress):
+        """현재 진행도의 동시 노트 상한 — progress 1에서 12개."""
+        return MAX_ACTIVE_NOTES + int(progress * MAX_ACTIVE_RAMP)
 
     def handle_event(self, event):
         """레인키 판정: 히트라인 창 안의 노트를 성공 처리하고 요리를 지급한다."""
@@ -99,9 +121,10 @@ class RhythmGame:
 
     def update(self):
         now = get_time()
+        progress = self._progress(now)
         if (
             self.queue
-            and len(self.active) < MAX_ACTIVE_NOTES
+            and len(self.active) < self.max_active(progress)
             and now >= self.next_spawn_at
         ):
             name = self.queue.pop(0)
@@ -112,9 +135,8 @@ class RhythmGame:
                     "spawned_at": now,
                 }
             )
-            self.next_spawn_at = now + random.uniform(
-                SPAWN_MIN_SECONDS, SPAWN_MAX_SECONDS
-            )
+            low, high = self.spawn_interval_range(progress)
+            self.next_spawn_at = now + random.uniform(low, high)
         self.active = [
             note
             for note in self.active
