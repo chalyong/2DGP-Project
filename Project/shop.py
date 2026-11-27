@@ -491,7 +491,8 @@ class Shop:
         for index, (key, price, kind) in enumerate(rows):
             y = 360 - index * 80
             name = key.upper() if kind == "resource" else f"LIVE {key.upper()}"
-            draw_item_icon(key.upper(), 120, y)
+            # 자원(닭고기 등)은 item 아이콘, 산 동물은 시트 프레임
+            draw_item_icon(key.upper(), 120, y, prefer_item=(kind == "resource"))
             self.item_font.draw(165, y, name, (235, 235, 235))
             if kind == "resource":
                 owned = game_state.collected_items.get(key, 0)
