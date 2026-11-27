@@ -1,20 +1,25 @@
 # 4노트 리듬게임 판 (뷔페_PRD 3.3)
-# b9: 판 표시와 노트 낙하 — 판정·보상은 b10에서 추가
+# b9: 판 표시와 노트 낙하 / b10: 판정(D/F/J/K)과 보상
 import random
 
 from pico2d import get_time, load_font, load_image
+from sdl2 import SDL_KEYDOWN, SDLK_d, SDLK_f, SDLK_j, SDLK_k
 
+import game_state
 import shop
 
 PANEL_CENTER_X = 400
 PANEL_WIDTH = 340
 PANEL_HEIGHT = 530
 LANE_COUNT = 4
+LANE_KEYS = (SDLK_d, SDLK_f, SDLK_j, SDLK_k)  # 레인 0~3 키
 SPAWN_MIN_SECONDS = 0.5
 SPAWN_MAX_SECONDS = 1.0
 MAX_ACTIVE_NOTES = 2
 FALL_SECONDS = 2.0  # 패널 상단 -> 히트라인 낙하 시간
 NOTE_LINGER_SECONDS = 0.35  # 히트라인 통과 후 제거 대기
+PERFECT_WINDOW = 0.12  # 히트라인 ±초: PERFECT -> 2개 제작
+GOOD_WINDOW = 0.30  # 히트라인 ±초: GOOD -> 1개 제작
 NOTE_SIZE = 44
 FRAME_SIZE = 66
 HIT_RATIO = 0.16  # 패널 하단 기준 히트라인 높이
@@ -42,6 +47,35 @@ class RhythmGame:
         self.active = []  # {"name", "lane", "spawned_at"}
         self.errors = list(errors)
         self.next_spawn_at = get_time() + SPAWN_MIN_SECONDS
+        self.last_label = None  # 판정 피드백 ("PERFECT +2" 등)
+        self.last_label_time = -2.0
+
+    def handle_event(self, event):
+        """레인키 판정: 히트라인 창 안의 노트를 성공 처리하고 요리를 지급한다."""
+        if event.type != SDL_KEYDOWN or event.key not in LANE_KEYS:
+            return
+        lane = LANE_KEYS.index(event.key)
+        now = get_time()
+        best = None
+        best_delta = None
+        for note in self.active:
+            if note["lane"] != lane:
+                continue
+            delta = abs(now - (note["spawned_at"] + FALL_SECONDS))
+            if delta <= GOOD_WINDOW and (
+                best_delta is None or delta < best_delta
+            ):
+                best = note
+                best_delta = delta
+        if best is None:
+            return
+        self.active.remove(best)
+        award = 2 if best_delta <= PERFECT_WINDOW else 1
+        game_state.award_dish(best["name"], award)
+        self.last_label = (
+            f"PERFECT +{award}" if award == 2 else f"GOOD +{award}"
+        )
+        self.last_label_time = now
 
     @property
     def done(self):
@@ -117,6 +151,20 @@ class RhythmGame:
                 int(y),
                 size=NOTE_SIZE,
                 prefer_item=True,
+            )
+        # 레인키 안내와 판정 피드백
+        for lane in range(LANE_COUNT):
+            label = ("D", "F", "J", "K")[lane]
+            RhythmGame.error_font.draw(
+                int(self.lane_x(lane)) - 4,
+                self.panel_bottom + 22,
+                label,
+                (200, 205, 215),
+            )
+        if now - self.last_label_time < 0.6:
+            color = (255, 224, 120) if "PERFECT" in self.last_label else (235, 235, 235)
+            RhythmGame.error_font.draw(
+                400, hit_y + 70, self.last_label, color
             )
         if self.errors:
             RhythmGame.error_font.draw(

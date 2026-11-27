@@ -47,6 +47,8 @@ class CookMenu:
             CookMenu.detail_font = load_font(r"C:\Windows\Fonts\consolab.ttf", 16)
 
     def handle_event(self, event):
+        if self.rhythm is not None:
+            self.rhythm.handle_event(event)
         if (
             event.type == SDL_KEYDOWN
             and event.key == SDLK_SPACE
@@ -126,7 +128,7 @@ class CookMenu:
         cooked = []
         failed = []
         for name, quantity in requests:
-            ok, detail = game_state.cook(name, quantity)
+            ok, detail = game_state.consume_ingredients(name, quantity)
             if ok:
                 cooked.append((name, quantity))
             elif detail not in failed:
@@ -135,7 +137,7 @@ class CookMenu:
             # 오류 상태 우선 표시 (PRD: 부족한 요리는 제작되지 않음)
             self.message = " / ".join(failed)
         else:
-            self.message = "COOKED " + ", ".join(
+            self.message = "REQUESTED " + ", ".join(
                 f"{name} x{quantity}" for name, quantity in cooked
             )
         self.message_time = get_time()

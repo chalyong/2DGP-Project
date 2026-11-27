@@ -33,8 +33,8 @@ RECIPES = (
 )
 
 
-def cook(name, count=1):
-    """요리 제작 count회. 재료가 count회분에 못 미치면 소비 없이 실패. (성공, 메시지)."""
+def consume_ingredients(name, count=1):
+    """요리 재료 count회분 소비. 전량 검증 후 소비만 하고 요리는 지급하지 않음."""
     if count <= 0:
         return False, "INVALID COUNT"
     for recipe_name, groups in RECIPES:
@@ -52,9 +52,22 @@ def cook(name, count=1):
                 remaining -= take
                 if remaining == 0:
                     break
-        cooked_items[name] = cooked_items.get(name, 0) + count
-        return True, f"COOKED {name} x{count}"
+        return True, f"CONSUMED {name} x{count}"
     return False, "UNKNOWN RECIPE"
+
+
+def award_dish(name, count=1):
+    """리듬게임 성공분만큼 완성 요리 지급."""
+    cooked_items[name] = cooked_items.get(name, 0) + count
+
+
+def cook(name, count=1):
+    """요리 제작 count회 (임시 COOKING 탭용): 소비 + 지급."""
+    ok, message = consume_ingredients(name, count)
+    if not ok:
+        return False, message
+    award_dish(name, count)
+    return True, f"COOKED {name} x{count}"
 tools = []
 open_tunnels = {
     "stone": True,
