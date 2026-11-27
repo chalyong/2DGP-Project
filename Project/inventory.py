@@ -19,7 +19,7 @@ class Inventory:
     detail_font = None
     description_font = None
 
-    TABS = ("ASSETS", "COLLECTIBLES", "COOKING", "TOOLS", "PASSES")
+    TABS = ("ASSETS", "COLLECTIBLES", "TOOLS", "PASSES")
     TAB_START = 76
     TAB_WIDTH = 128
     ITEMS_PER_PAGE = 3
@@ -72,8 +72,6 @@ class Inventory:
                 )
                 self.page = 0
                 return
-            if self.tab == 2:
-                self._handle_cook_click(x, y)
             return
 
         if (
@@ -102,23 +100,10 @@ class Inventory:
         if self.tab == 1:
             count = len(game_state.collected_items)
         elif self.tab == 2:
-            count = len(game_state.RECIPES)
-        elif self.tab == 3:
             count = len(self._tool_list())
         else:
             count = len(game_state.passes)
         return max(1, (count + self.ITEMS_PER_PAGE - 1) // self.ITEMS_PER_PAGE)
-
-    def _handle_cook_click(self, x, y):
-        """COOKING 탭 행 클릭 -> 해당 레시피 제작."""
-        rows = list(game_state.RECIPES)
-        for index, (name, groups) in enumerate(self._page_slice(rows)):
-            row_y = self.ROW_Y0 - index * self.ROW_SPACING
-            if 100 <= x < 700 and row_y - 40 <= y <= row_y + 20:
-                ok, message = game_state.cook(name)
-                self.message = message
-                self.message_time = get_time()
-                return
 
     def _page_slice(self, sequence):
         start = self.page * self.ITEMS_PER_PAGE
@@ -145,8 +130,6 @@ class Inventory:
         elif self.tab == 1:
             self._draw_items(game_state.collected_items)
         elif self.tab == 2:
-            self._draw_recipes()
-        elif self.tab == 3:
             self._draw_tools()
         else:
             self._draw_passes()
@@ -195,29 +178,6 @@ class Inventory:
                 f"x {count}",
                 (255, 224, 120),
             )
-
-    def _draw_recipes(self):
-        """COOKING 탭: 레시피 목록 (클릭 시 제작)."""
-        rows = list(game_state.RECIPES)
-        if not rows:
-            self.detail_font.draw(285, 290, "EMPTY", (180, 190, 205))
-            return
-
-        for index, (name, groups) in enumerate(self._page_slice(rows)):
-            y = self.ROW_Y0 - index * self.ROW_SPACING
-            shop.draw_item_icon(name, 120, y, prefer_item=True)
-            self.item_font.draw(165, y, name, (235, 235, 235))
-            cooked = game_state.cooked_items.get(name, 0)
-            self.item_font.draw(
-                self.PRICE_X,
-                y,
-                f"x {cooked}",
-                (255, 224, 120),
-            )
-            ingredients = " + ".join(
-                "/".join(key.upper() for key in group) for group in groups
-            )
-            self.description_font.draw(165, y - 20, ingredients, (180, 190, 205))
 
     def _draw_tools(self):
         # 광산 도구(곡괭이) + 농사지 도구(낫 곡괭이·비료)

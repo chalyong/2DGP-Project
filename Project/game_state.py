@@ -59,15 +59,6 @@ def consume_ingredients(name, count=1):
 def award_dish(name, count=1):
     """리듬게임 성공분만큼 완성 요리 지급."""
     cooked_items[name] = cooked_items.get(name, 0) + count
-
-
-def cook(name, count=1):
-    """요리 제작 count회 (임시 COOKING 탭용): 소비 + 지급."""
-    ok, message = consume_ingredients(name, count)
-    if not ok:
-        return False, message
-    award_dish(name, count)
-    return True, f"COOKED {name} x{count}"
 tools = []
 open_tunnels = {
     "stone": True,
