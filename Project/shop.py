@@ -128,6 +128,37 @@ FARM_SHOP_PAGES = [
     ),
 ]
 
+# 뷔페 시설 상점 (뷔페_PRD 3.2) — 비용은 b3 기본값(조정 가능)
+# name, price, description, required ore (name, count) or None, kind, kind target
+BUFFET_SHOP_PAGES = [
+    (
+        (
+            "CHAIR",
+            100,
+            "chair +1 (guests stay longer)",
+            ("stone", 5),
+            "buffet_facility",
+            "chair",
+        ),
+        (
+            "TABLE",
+            300,
+            "table +1 (guests eat faster)",
+            ("iron", 5),
+            "buffet_facility",
+            "table",
+        ),
+        (
+            "DECOR",
+            500,
+            "decor +1 (tip & entry rate up)",
+            ("gold", 3),
+            "buffet_facility",
+            "decor",
+        ),
+    ),
+]
+
 # name, price, description, required ore (name, count) or None, kind, kind target
 ITEM_PAGES = (
     (
