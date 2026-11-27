@@ -21,6 +21,34 @@ collected_items = {
     "pork": 0,
 }
 cooked_items = {}
+
+# 요리 레시피 (PRD 6단계 — 뷔페 이전 인벤토리 제작 경로)
+# 각 재료 그룹은 "그룹 중 하나"를 1개 소비: (요리명, ((소비그룹1), (소비그룹2), ...))
+RECIPES = (
+    ("FRENCH FRIES", (("potato",),)),
+    ("EGG BREAD", (("wheat",), ("egg",))),
+    ("BERRY DESSERT", (("strawberry",), ("milk",))),
+    ("MUSHROOM SOUP", (("mushroom",), ("milk",))),
+    ("STEAK", (("chicken", "beef", "pork"), ("potato",))),
+)
+
+
+def cook(name):
+    """요리 제작. 성공 시 (True, 메시지), 실패 시 (False, 사유)."""
+    for recipe_name, groups in RECIPES:
+        if recipe_name != name:
+            continue
+        for group in groups:
+            if not any(collected_items.get(key, 0) > 0 for key in group):
+                return False, f"NEED {group[0].upper()}"
+        for group in groups:
+            for key in group:
+                if collected_items.get(key, 0) > 0:
+                    collected_items[key] -= 1
+                    break
+        cooked_items[name] = cooked_items.get(name, 0) + 1
+        return True, f"COOKED {name}"
+    return False, "UNKNOWN RECIPE"
 tools = []
 open_tunnels = {
     "stone": True,
