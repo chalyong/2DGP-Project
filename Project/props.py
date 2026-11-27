@@ -226,6 +226,45 @@ class BuffetShopkeeper:
         )
 
 
+# buffet_chef.png: 균일 4프레임 64x64 아이들 시트 (상인과 동일 레이아웃)
+class BuffetChef:
+    image = None
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.frame = 0
+        self.frame_timer = 0.0
+        self.last_update_time = get_time()
+        if BuffetChef.image is None:
+            BuffetChef.image = load_image("assets/npc/buffet_chef.png")
+        self.image = BuffetChef.image
+
+    def update(self):
+        current_time = get_time()
+        delta_time = max(0.0, current_time - self.last_update_time)
+        self.last_update_time = current_time
+        self.frame_timer += delta_time
+        while self.frame_timer >= MERCHANT_IDLE_FRAME_DURATION:
+            self.frame = (self.frame + 1) % len(MERCHANT_IDLE_FRAMES)
+            self.frame_timer -= MERCHANT_IDLE_FRAME_DURATION
+
+    def draw(self):
+        left, bottom, width, height = MERCHANT_IDLE_FRAMES[self.frame]
+        self.image.clip_composite_draw(
+            left,
+            bottom,
+            width,
+            height,
+            0,
+            "",
+            self.x - camera.x,
+            self.y - camera.y,
+            width,
+            height,
+        )
+
+
 # 교배 전문가 (breeder_idle.png 균일 4프레임 64x64 — 보유 시에만 표시)
 class Breeder:
     image = None
