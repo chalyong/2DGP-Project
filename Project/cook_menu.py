@@ -111,7 +111,7 @@ class CookMenu:
         return max(0, limit or 0)
 
     def _submit(self):
-        """요청 내역 표시 (b8에서 재료 검증 후 수량만큼 제작으로 교체)."""
+        """요청 수량만큼 제작 (뷔페_PRD 3.3): 전량 검증 후 소비, 부족분은 오류 표시."""
         requests = [
             (name, quantity)
             for name, quantity in self.quantities.items()
@@ -119,11 +119,21 @@ class CookMenu:
         ]
         if not requests:
             self.message = "SET QUANTITY FIRST"
+            self.message_time = get_time()
+            return
+        cooked = []
+        failed = []
+        for name, quantity in requests:
+            ok, detail = game_state.cook(name, quantity)
+            if ok:
+                cooked.append(f"{name} x{quantity}")
+            elif detail not in failed:
+                failed.append(detail)
+        if failed:
+            # 오류 상태 우선 표시 (PRD: 부족한 요리는 제작되지 않음)
+            self.message = " / ".join(failed)
         else:
-            summary = ", ".join(
-                f"{name} x{quantity}" for name, quantity in requests
-            )
-            self.message = f"REQ: {summary}"
+            self.message = "COOKED " + ", ".join(cooked)
         self.message_time = get_time()
 
     def _page_count(self):

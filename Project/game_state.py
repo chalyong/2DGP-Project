@@ -33,21 +33,27 @@ RECIPES = (
 )
 
 
-def cook(name):
-    """요리 제작. 성공 시 (True, 메시지), 실패 시 (False, 사유)."""
+def cook(name, count=1):
+    """요리 제작 count회. 재료가 count회분에 못 미치면 소비 없이 실패. (성공, 메시지)."""
+    if count <= 0:
+        return False, "INVALID COUNT"
     for recipe_name, groups in RECIPES:
         if recipe_name != name:
             continue
         for group in groups:
-            if not any(collected_items.get(key, 0) > 0 for key in group):
+            available = sum(collected_items.get(key, 0) for key in group)
+            if available < count:
                 return False, f"NEED {group[0].upper()}"
         for group in groups:
+            remaining = count
             for key in group:
-                if collected_items.get(key, 0) > 0:
-                    collected_items[key] -= 1
+                take = min(collected_items.get(key, 0), remaining)
+                collected_items[key] -= take
+                remaining -= take
+                if remaining == 0:
                     break
-        cooked_items[name] = cooked_items.get(name, 0) + 1
-        return True, f"COOKED {name}"
+        cooked_items[name] = cooked_items.get(name, 0) + count
+        return True, f"COOKED {name} x{count}"
     return False, "UNKNOWN RECIPE"
 tools = []
 open_tunnels = {
