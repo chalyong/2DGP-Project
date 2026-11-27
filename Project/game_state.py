@@ -176,3 +176,107 @@ def update_miner_income():
         for ore_name, count in miners.items():
             if count:
                 collected_items[ore_name] += count
+
+
+# --- 저장/불러오기 (PRD 9단계 최소 구현 — 단축키 F5/F9, 메뉴 UI는 이후 이관) ---
+import json
+import os
+
+SAVE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saves")
+SAVE_VERSION = 1
+
+
+def _slot_path(slot):
+    return os.path.join(SAVE_DIR, f"slot_{slot}.json")
+
+
+def save_game(slot=1):
+    """현재 상태를 JSON 슬롯에 저장. (성공, 메시지) 반환."""
+    if not 1 <= slot <= 5:
+        return False, "SLOT ERROR"
+    now = get_time()
+    state = {
+        "version": SAVE_VERSION,
+        "money": money,
+        "collected_items": dict(collected_items),
+        "cooked_items": dict(cooked_items),
+        "tools": list(tools),
+        "farm_tools": list(farm_tools),
+        "open_tunnels": dict(open_tunnels),
+        "miners": dict(miners),
+        "passes": list(passes),
+        "animal_counts": dict(animal_counts),
+        "hunting_knives": hunting_knives,
+        "breeders": dict(breeders),
+        "farm_unlocked": dict(farm_unlocked),
+        # 상대시각(get_time 프로세스 기준)은 "경과 초"로 저장해 이식성 유지
+        "play_elapsed": now - play_start_time,
+        "animal_cooldowns": {k: v - now for k, v in animal_cooldowns.items()},
+        "crop_slots": [
+            [key[0], key[1],
+             slot_data["planted_at"] - now,
+             None if slot_data["harvested_at"] is None
+             else slot_data["harvested_at"] - now]
+            for key, slot_data in crop_slots.items()
+        ],
+        "miner_cycle_count": miner_cycle_count,
+    }
+    try:
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        with open(_slot_path(slot), "w", encoding="utf-8") as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+    except OSError:
+        return False, "SAVE FAILED"
+    return True, f"SAVED SLOT {slot}"
+
+
+def load_game(slot=1):
+    """슬롯을 불러와 상태 복원. 실패 시 상태를 건드리지 않음. (성공, 메시지) 반환."""
+    path = _slot_path(slot)
+    if not os.path.exists(path):
+        return False, f"NO SAVE SLOT {slot}"
+    try:
+        with open(path, encoding="utf-8") as f:
+            state = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False, "SAVE DATA CORRUPT"
+    if not isinstance(state, dict) or state.get("version") != SAVE_VERSION:
+        return False, "SAVE VERSION MISMATCH"
+    required = ("money", "collected_items", "tools", "animal_counts", "crop_slots")
+    if any(key not in state for key in required):
+        return False, "SAVE DATA INVALID"
+
+    global money, play_start_time, hunting_knives, miner_cycle_count
+    now = get_time()
+    money = state["money"]
+    collected_items.clear()
+    collected_items.update(state["collected_items"])
+    cooked_items.clear()
+    cooked_items.update(state.get("cooked_items", {}))
+    tools[:] = state["tools"]
+    farm_tools[:] = state.get("farm_tools", [])
+    open_tunnels.clear()
+    open_tunnels.update(state.get("open_tunnels", open_tunnels))
+    miners.clear()
+    miners.update(state.get("miners", miners))
+    passes[:] = state.get("passes", [])
+    animal_counts.clear()
+    animal_counts.update(state["animal_counts"])
+    hunting_knives = state.get("hunting_knives", 0)
+    breeders.clear()
+    breeders.update(state.get("breeders", breeders))
+    farm_unlocked.clear()
+    farm_unlocked.update(state.get("farm_unlocked", farm_unlocked))
+    play_start_time = now - state.get("play_elapsed", 0)
+    animal_cooldowns.clear()
+    animal_cooldowns.update(
+        {k: now + v for k, v in state.get("animal_cooldowns", {}).items()}
+    )
+    crop_slots.clear()
+    for crop, index, planted, harvested in state["crop_slots"]:
+        crop_slots[(crop, index)] = {
+            "planted_at": now + planted,
+            "harvested_at": None if harvested is None else now + harvested,
+        }
+    miner_cycle_count = state.get("miner_cycle_count", 0)
+    return True, f"LOADED SLOT {slot}"

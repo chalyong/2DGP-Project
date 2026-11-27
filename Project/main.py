@@ -10,6 +10,8 @@ from sdl2 import (
     SDL_KEYDOWN,
     SDL_QUIT,
     SDLK_ESCAPE,
+    SDLK_F5,
+    SDLK_F9,
     SDLK_SPACE,
     SDL_RenderClear,
     SDL_RenderSetLogicalSize,
@@ -71,6 +73,25 @@ def miner_slot_x(index):
     return MINER_SLOT_CENTER_X + (index - 4.5) * MINER_SLOT_SPACING
 
 
+def reload_current_scene():
+    """불러오기 후 현재 씬을 재구성한다 (상점·동물·작물 상태 반영)."""
+    if in_tunnel:
+        enter_tunnel(current_tunnel)
+    elif in_mine:
+        enter_mine()
+    elif in_farm:
+        enter_farm()
+    elif in_ranch:
+        enter_ranch()
+    else:
+        reset_world()
+    # 동물 카운트를 저장값에 맞춘다 (초과분 제거 + 부족분 배치)
+    for animal in game_state.animal_counts:
+        while auto_npc.count_animals(animal) > game_state.animal_counts[animal]:
+            auto_npc.remove_animal(animal)
+    auto_npc.ensure_animal_population()
+
+
 def handle_events():
     global running
 
@@ -79,6 +100,14 @@ def handle_events():
             running = False
         elif event.type == SDL_KEYDOWN and event.key == SDLK_ESCAPE:
             running = False
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_F5:
+            ok, msg = game_state.save_game(1)
+            print(msg)
+        elif event.type == SDL_KEYDOWN and event.key == SDLK_F9:
+            ok, msg = game_state.load_game(1)
+            print(msg)
+            if ok:
+                reload_current_scene()
         elif inventory.open:
             game_world.handle_event(event)
         elif (
