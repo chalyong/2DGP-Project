@@ -20,7 +20,7 @@ SPAWN_RAMP_SECONDS = 30.0  # 시작 간격 -> 0.2초까지 감소하는 데 걸�
 MAX_ACTIVE_NOTES = 2  # 시작 동시 노트 상한
 MAX_ACTIVE_RAMP = 10  # 램프 동안 추가되는 상한 (2 -> 12)
 FALL_SECONDS = 2.0  # 패널 상단 -> 히트라인 낙하 시간 (속도는 불변)
-NOTE_LINGER_SECONDS = 0.35  # 히트라인 통과 후 제거 대기
+MISS_WINDOW_SECONDS = 1.0  # 판정선 ±1초: 레인키 입력 시 MISS / 미입력 노트는 +1초까지 낙하 후 제거
 PERFECT_WINDOW = 0.05  # 히트라인 ±초: PERFECT -> 2개 제작
 GOOD_WINDOW = 0.30  # 히트라인 ±초: GOOD -> 1개 제작
 NOTE_FRAME_SIZE = 52  # 노트 = 리듬 프레임 + 그 위 요리 아이콘
@@ -79,7 +79,7 @@ class RhythmGame:
         return MAX_ACTIVE_NOTES + int(progress * MAX_ACTIVE_RAMP)
 
     def handle_event(self, event):
-        """레인키 판정: 히트라인 창 안의 노트를 성공 처리하고 요리를 지급한다."""
+        """레인키 판정: P/G창 노트는 성공 처리, ±1초 안 미판정 노트는 MISS."""
         if event.type != SDL_KEYDOWN or event.key not in LANE_KEYS:
             return
         lane = LANE_KEYS.index(event.key)
@@ -95,21 +95,44 @@ class RhythmGame:
             ):
                 best = note
                 best_delta = delta
-        if best is None:
+        if best is not None:
+            self.active.remove(best)
+            award = 2 if best_delta <= PERFECT_WINDOW else 1
+            game_state.award_dish(best["name"], award)
+            self.combo += 1
+            self.max_combo = max(self.max_combo, self.combo)
+            if award == 2:
+                self.perfect_count += 1
+            else:
+                self.good_count += 1
+            self.awards[best["name"]] = self.awards.get(best["name"], 0) + award
+            self.last_label = (
+                f"PERFECT +{award}" if award == 2 else f"GOOD +{award}"
+            )
+            self.last_label_time = now
             return
-        self.active.remove(best)
-        award = 2 if best_delta <= PERFECT_WINDOW else 1
-        game_state.award_dish(best["name"], award)
-        self.combo += 1
-        self.max_combo = max(self.max_combo, self.combo)
-        if award == 2:
-            self.perfect_count += 1
-        else:
-            self.good_count += 1
-        self.awards[best["name"]] = self.awards.get(best["name"], 0) + award
-        self.last_label = (
-            f"PERFECT +{award}" if award == 2 else f"GOOD +{award}"
-        )
+        # 판정창 밖 ±1초: 가장 가까운 노트를 MISS로 소비 (연속 입력 회피 방지)
+        miss_note = None
+        miss_delta = None
+        for note in self.active:
+            if note["lane"] != lane:
+                continue
+            delta = abs(now - (note["spawned_at"] + FALL_SECONDS))
+            if delta <= MISS_WINDOW_SECONDS and (
+                miss_delta is None or delta < miss_delta
+            ):
+                miss_note = note
+                miss_delta = delta
+        if miss_note is None:
+            return
+        self.active.remove(miss_note)
+        self._register_miss(now)
+
+    def _register_miss(self, now):
+        """MISS 판정: 콤보 끊김·집계 증가·라벨 표시."""
+        self.miss_count += 1
+        self.combo = 0
+        self.last_label = "MISS"
         self.last_label_time = now
 
     @property
@@ -160,14 +183,11 @@ class RhythmGame:
             self.next_spawn_at = now + random.uniform(low, high)
         remaining = []
         for note in self.active:
-            if now - note["spawned_at"] <= FALL_SECONDS + NOTE_LINGER_SECONDS:
+            if now - note["spawned_at"] <= FALL_SECONDS + MISS_WINDOW_SECONDS:
                 remaining.append(note)
             else:
-                # 판정 창을 지나간 노트 = MISS: 콤보 끊김, 요리획득 없음
-                self.miss_count += 1
-                self.combo = 0
-                self.last_label = "MISS"
-                self.last_label_time = now
+                # 판정선 +1초까지 내려온 미입력 노트 = MISS (콤보 끊김)
+                self._register_miss(now)
         self.active = remaining
 
     def draw(self):
@@ -187,7 +207,8 @@ class RhythmGame:
         # 낙하 노트: 리듬 프레임 위에 요리 아이콘을 얹어 내려옴
         now = get_time()
         for note in self.active:
-            ratio = min((now - note["spawned_at"]) / FALL_SECONDS, 1.0)
+            # 판정선 아래(+1초까지)도 같은 속도로 계속 낙하
+            ratio = (now - note["spawned_at"]) / FALL_SECONDS
             y = int(top - (top - hit_y) * ratio)
             x = int(self.lane_x(note["lane"]))
             RhythmGame.frame.draw(x, y, NOTE_FRAME_SIZE, NOTE_FRAME_SIZE)
