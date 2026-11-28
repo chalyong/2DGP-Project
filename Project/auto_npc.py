@@ -151,7 +151,34 @@ def hire(crop):
             "last_update": get_time(),
         }
     )
+    game_state.npc_farmer_counts[crop] = count(crop)
     return True
+
+
+def sync_hires():
+    """저장값과 고용 직원 상태를 맞춘다 (로드 후 복원·슬롯 간 재설정)."""
+    crops = {f["crop"] for f in states} | set(game_state.npc_farmer_counts)
+    for crop in crops:
+        target = game_state.npc_farmer_counts.get(crop, 0)
+        while count(crop) > target:
+            for index, f in enumerate(states):
+                if f["crop"] == crop:
+                    del states[index]
+                    break
+        while count(crop) < target and hire(crop):
+            pass
+    zones = {m["animal"] for m in manager_states} | set(
+        game_state.npc_manager_counts
+    )
+    for animal in zones:
+        target = game_state.npc_manager_counts.get(animal, 0)
+        while count_managers(animal) > target:
+            for index, m in enumerate(manager_states):
+                if m["animal"] == animal:
+                    del manager_states[index]
+                    break
+        while count_managers(animal) < target and hire_manager(animal):
+            pass
 
 
 def update():
@@ -332,6 +359,7 @@ def hire_manager(animal):
             "motion_until": 0.0,
         }
     )
+    game_state.npc_manager_counts[animal] = count_managers(animal)
     return True
 
 

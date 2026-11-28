@@ -109,6 +109,8 @@ def reload_current_scene():
         while auto_npc.count_animals(animal) > game_state.animal_counts[animal]:
             auto_npc.remove_animal(animal)
     auto_npc.ensure_animal_population()
+    # 고용 직원(농부·목장 관리인)도 저장값과 맞춘다
+    auto_npc.sync_hires()
 
 
 # 저장 메뉴 로드 성공 시 현재 씬 재구성

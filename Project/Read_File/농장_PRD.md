@@ -119,7 +119,8 @@ farm_tools = []   # 보유 도구: "HOE", "HOE+", "HOE++", "FERTILIZER"
 
 # auto_npc.py — 농부 시뮬레이션
 states = []       # 농부 dict 목록 (crop, x, y, 이동 목표, 애니메이션 상태)
-# hire/at_limit/update/speed 함수, MAX_PER_ZONE = 3
+# hire/at_limit/sync_hires/update/speed 함수, MAX_PER_ZONE = 3
+# hire가 game_state.npc_farmer_counts를 동기화 → 저장/로드 시 sync_hires()로 복원 (PRD 9단계 직원 저장)
 ```
 
 - 자원 수량은 기존 `collected_items`를 그대로 사용한다 (`wheat`, `potato`, `strawberry` 키 추가).

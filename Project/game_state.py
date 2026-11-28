@@ -122,6 +122,9 @@ hunting_knives = 0
 ANIMAL_LIMIT_PER_ZONE = 10
 # 교배 전문가 보유 여부 — 구역별 1명 (목장_PRD 3.6/3.7)
 breeders = {"chicken": False, "cow": False, "pig": False}
+# 고용 직원 수 — auto_npc가 고용할 때 동기화하고 로드 시 sync_hires가 복원 (PRD 9단계 직원 저장)
+npc_farmer_counts = {}
+npc_manager_counts = {}
 
 # 뷔페 시설 보유 수량 (뷔페_PRD 3.2 — b5 선행 규칙의 기준)
 # 시작 시설: 식탁 1, 의자 2. 식탁=보유 의자 ≥ 식탁×2, 의자=빈자리(의자 < 식탁×2) 존재
@@ -261,6 +264,8 @@ def save_game(slot=1, name=""):
         "hunting_knives": hunting_knives,
         "breeders": dict(breeders),
         "buffet_facilities": dict(buffet_facilities),
+        "npc_farmer_counts": dict(npc_farmer_counts),
+        "npc_manager_counts": dict(npc_manager_counts),
         "farm_unlocked": dict(farm_unlocked),
         # 상대시각(get_time 프로세스 기준)은 "경과 초"로 저장해 이식성 유지
         "play_elapsed": now - play_start_time,
@@ -322,6 +327,10 @@ def load_game(slot=1):
     buffet_facilities.update(
         state.get("buffet_facilities") or BUFFET_FACILITIES_START
     )
+    npc_farmer_counts.clear()
+    npc_farmer_counts.update(state.get("npc_farmer_counts", {}))
+    npc_manager_counts.clear()
+    npc_manager_counts.update(state.get("npc_manager_counts", {}))
     farm_unlocked.clear()
     farm_unlocked.update(state.get("farm_unlocked", farm_unlocked))
     play_start_time = now - state.get("play_elapsed", 0)

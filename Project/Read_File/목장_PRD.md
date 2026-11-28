@@ -133,6 +133,7 @@ breeders = {"chicken": False, "cow": False, "pig": False}  # 구역별 교배 �
 # auto_npc.py 확장
 # - 동물 상태(무작위 이동, 4프레임 64x64 시트 — 농부와 동일 렌더 구조)
 # - 관리인 자동 수확(구역당 1명, 모션→결과 적용), 교배 전문가 구역별 주기 틱
+# - hire_manager가 game_state.npc_manager_counts를 동기화 → 저장/로드 시 sync_hires()로 복원 (PRD 9단계 직원 저장)
 ```
 
 - 시간 처리는 전부 `pico2d.get_time()` 경과 시간 기반 (프레임 무관).
